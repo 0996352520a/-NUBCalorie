@@ -16,7 +16,6 @@
         <div class="flex items-center gap-2">
             <!-- กล่องเลือกชื่อคน -->
             <select id="userSelector" onchange="switchUser()" class="text-gray-800 p-1.5 rounded-md text-sm w-24 font-bold border-none outline-none">
-                <!-- รายชื่อจะถูกดึงมาใส่ตรงนี้อัตโนมัติ -->
             </select>
             <!-- ปุ่มเพิ่มคน -->
             <button onclick="addNewUser()" class="bg-yellow-400 text-teal-900 px-3 py-1.5 rounded-md text-sm font-bold shadow active:bg-yellow-500">➕ เพิ่มคน</button>
@@ -30,17 +29,21 @@
         <div class="bg-white rounded-xl shadow p-5 mb-5 text-center relative overflow-hidden">
             <h2 class="text-gray-500 text-sm">โควตาแคลอรีวันนี้ (TDEE)</h2>
             <div class="text-4xl font-bold text-teal-600 my-2"><span id="tdeeDisplay">0</span> kcal</div>
+            
             <div class="flex justify-around mt-4 border-t pt-4">
-                <div>
+                <div class="flex flex-col items-center">
                     <div class="text-xs text-gray-400">กินไปแล้ว</div>
                     <div class="text-xl font-bold text-orange-500"><span id="calDisplay">0</span> kcal</div>
+                    <!-- ปุ่มเปิดดูประวัติ -->
+                    <button onclick="openHistory()" class="mt-2 text-xs bg-blue-50 text-blue-600 px-3 py-1 rounded-full border border-blue-200 active:bg-blue-100">📋 ดูประวัติการกิน</button>
                 </div>
-                <div>
+                <div class="flex flex-col items-center">
                     <div class="text-xs text-gray-400">BMI ของคุณ</div>
-                    <div class="text-xl font-bold text-blue-500" id="bmiDisplay">0.0</div>
+                    <div class="text-xl font-bold text-blue-500 mt-1" id="bmiDisplay">0.0</div>
                 </div>
             </div>
-            <button onclick="resetCalories()" class="mt-4 text-xs text-red-400 underline">รีเซ็ตแคลอรีวันนี้</button>
+            
+            <button onclick="resetCalories()" class="mt-5 text-xs text-red-400 underline">รีเซ็ตแคลอรีและประวัติวันนี้</button>
         </div>
 
         <!-- ตั้งค่าโปรไฟล์ -->
@@ -65,11 +68,24 @@
     </div>
 
     <!-- ปุ่มกล้องถ่ายรูป -->
-    <div class="fixed bottom-5 left-0 w-full flex justify-center px-4">
+    <div class="fixed bottom-5 left-0 w-full flex justify-center px-4 z-20">
         <label class="bg-orange-500 text-white px-6 py-3 rounded-full font-bold shadow-lg flex items-center cursor-pointer active:bg-orange-600 w-full max-w-md justify-center">
             📸 ถ่ายภาพอาหารนับแคล
             <input type="file" accept="image/*" capture="environment" id="cameraInput" class="hidden" onchange="analyzeFood(event)">
         </label>
+    </div>
+
+    <!-- หน้าต่างประวัติการกิน (ซ่อนไว้ เริ่มแรก) -->
+    <div id="historyModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-end justify-center z-40 transition-opacity">
+        <div class="bg-white w-full max-w-md rounded-t-2xl p-5 pb-24 shadow-2xl h-3/4 flex flex-col">
+            <div class="flex justify-between items-center border-b pb-3 mb-3">
+                <h3 class="font-bold text-lg text-teal-700">ประวัติการกินของ <span id="historyName"></span></h3>
+                <button onclick="closeHistory()" class="text-gray-500 font-bold text-3xl leading-none">&times;</button>
+            </div>
+            <ul id="historyList" class="space-y-3 overflow-y-auto flex-1 p-1">
+                <!-- รายการอาหารจะถูกนำมาแสดงตรงนี้ -->
+            </ul>
+        </div>
     </div>
 
     <!-- หน้าต่างโหลดโหลด -->
@@ -80,7 +96,7 @@
         </div>
     </div>
 
-    <!-- บังคับโหลดไฟล์ใหม่ -->
-    <script src="app.js?v=4"></script>
+    <!-- บังคับโหลดไฟล์ใหม่ V5 -->
+    <script src="app.js?v=5"></script>
 </body>
 </html>
