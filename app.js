@@ -4,7 +4,7 @@ let tempFoodData = null;
 let activeTab = 'home'; 
 
 // ==========================================
-// 🚀 รหัส API KEY ของ Google Gemini (ของคุณ)
+// 🚀 รหัส API KEY ของ Google Gemini (ของคุณที่ให้มา)
 const GEMINI_API_KEY = "AQ.Ab8RN6Ln8hJ_VmQjW3Tr0pOH4cwjjESyCFEyAcZg0XfF9FIwtw";
 // ==========================================
 
@@ -200,6 +200,22 @@ function renderAllDataView() {
         document.getElementById('adRemainingCal').className = "text-base font-extrabold text-red-500 mt-1";
     }
 
+    const pTar = profile.targetProtein || 1, cTar = profile.targetCarbs || 1, fTar = profile.targetFat || 1;
+    document.getElementById('adPConsumed').innerText = today.protein;
+    document.getElementById('adPTarget').innerText = profile.targetProtein || 0;
+    document.getElementById('adPPct').innerText = `${Math.round((today.protein / pTar) * 100)}%`;
+    document.getElementById('adPBar').style.width = `${Math.min(100, Math.round((today.protein / pTar) * 100))}%`;
+
+    document.getElementById('adCConsumed').innerText = today.carbs;
+    document.getElementById('adCTarget').innerText = profile.targetCarbs || 0;
+    document.getElementById('adCPct').innerText = `${Math.round((today.carbs / cTar) * 100)}%`;
+    document.getElementById('adCBar').style.width = `${Math.min(100, Math.round((today.carbs / cTar) * 100))}%`;
+
+    document.getElementById('adFConsumed').innerText = today.fat;
+    document.getElementById('adFTarget').innerText = profile.targetFat || 0;
+    document.getElementById('adFPct').innerText = `${Math.round((today.fat / fTar) * 100)}%`;
+    document.getElementById('adFBar').style.width = `${Math.min(100, Math.round((today.fat / fTar) * 100))}%`;
+
     const listEl = document.getElementById('adHistoryList');
     listEl.innerHTML = "";
     if(history.length === 0) {
@@ -249,7 +265,54 @@ function resetCalories() {
 }
 
 // ==========================================
-// ระบบ AI ของจริง (Gemini Vision)
+// ✍️ ระบบเพิ่มอาหารเอง (Manual Entry)
+// ==========================================
+function openManualEntry() {
+    // ล้างค่าเก่าในกล่องข้อความก่อนเปิด
+    document.getElementById('manualFoodName').value = "";
+    document.getElementById('manualCalories').value = "";
+    document.getElementById('manualProtein').value = "";
+    document.getElementById('manualCarbs').value = "";
+    document.getElementById('manualFat').value = "";
+    document.getElementById('manualEntryModal').classList.remove('hidden');
+}
+
+function closeManualEntry() {
+    document.getElementById('manualEntryModal').classList.add('hidden');
+}
+
+function saveManualFood() {
+    const name = document.getElementById('manualFoodName').value.trim();
+    const cal = parseInt(document.getElementById('manualCalories').value) || 0;
+    const p = parseInt(document.getElementById('manualProtein').value) || 0;
+    const c = parseInt(document.getElementById('manualCarbs').value) || 0;
+    const f = parseInt(document.getElementById('manualFat').value) || 0;
+
+    if(!name || cal === 0) {
+        alert("กรุณาพิมพ์ชื่ออาหารและตัวเลขแคลอรี่รวมให้ครบถ้วนครับ");
+        return;
+    }
+
+    let current = getTodayNutrition();
+    current.calories += cal;
+    current.protein += p;
+    current.carbs += c;
+    current.fat += f;
+    localStorage.setItem(`nubcalorie_${currentUser}_todayNutrition`, JSON.stringify(current));
+
+    let history = JSON.parse(localStorage.getItem(`nubcalorie_${currentUser}_history`) || "[]");
+    const timeNow = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+    
+    history.push({ name: name, cal: cal, p: p, c: c, f: f, time: timeNow });
+    localStorage.setItem(`nubcalorie_${currentUser}_history`, JSON.stringify(history));
+
+    closeManualEntry();
+    loadProfile();
+    alert(`บันทึก "${name}" เรียบร้อยแล้ว!`);
+}
+
+// ==========================================
+// 📸 ระบบ AI ของจริง (Gemini Vision)
 // ==========================================
 async function analyzeFood(event) {
     const file = event.target.files[0];
@@ -262,7 +325,6 @@ async function analyzeFood(event) {
         const base64Image = e.target.result.split(',')[1];
         
         try {
-            // เรียกใช้งานโมเดล Gemini 1.5 Flash เพื่อความรวดเร็วและแม่นยำ
             const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -277,22 +339,12 @@ async function analyzeFood(event) {
             });
 
             const data = await response.json();
-            
-            // อ่านค่าที่ AI ตอบกลับมา
             let resultText = data.candidates[0].content.parts[0].text;
-            
-            // ทำความสะอาดข้อความ (เอา ```json และ \n ออก)
             resultText = resultText.replace(/```json/g, "").replace(/```/g, "").trim();
-            
-            // แปลงเป็นข้อมูล
             const foodData = JSON.parse(resultText);
 
             tempFoodData = {
-                name: foodData.name,
-                cal: parseInt(foodData.cal),
-                p: parseInt(foodData.p),
-                c: parseInt(foodData.c),
-                f: parseInt(foodData.f)
+                name: foodData.name, cal: parseInt(foodData.cal), p: parseInt(foodData.p), c: parseInt(foodData.c), f: parseInt(foodData.f)
             };
 
             document.getElementById('loading').classList.add('hidden');
@@ -305,7 +357,6 @@ async function analyzeFood(event) {
             document.getElementById('cameraInput').value = "";
         }
     };
-    // อ่านไฟล์ภาพเป็น Base64
     reader.readAsDataURL(file);
 }
 
