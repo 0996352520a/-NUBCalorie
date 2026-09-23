@@ -1,20 +1,17 @@
 let currentUser = ""; 
-let userList = []; // เก็บรายชื่อคนทั้งหมดในแอป
+let userList = []; 
 
 window.onload = () => {
-    // โหลดรายชื่อผู้ใช้ที่เคยมีในระบบ
     const savedUsers = localStorage.getItem('fitbite_userList');
     if(savedUsers) {
         userList = JSON.parse(savedUsers);
     }
 
-    // ถ้ายังไม่เคยมีใครใช้งานเลย ให้สร้างโปรไฟล์เริ่มต้นชื่อ "ฉัน"
     if(userList.length === 0) {
         userList.push("ฉัน");
         localStorage.setItem('fitbite_userList', JSON.stringify(userList));
     }
 
-    // โหลดชื่อคนที่ใช้งานล่าสุด
     const lastUser = localStorage.getItem('fitbite_currentUser');
     if(lastUser && userList.includes(lastUser)) {
         currentUser = lastUser;
@@ -26,25 +23,22 @@ window.onload = () => {
     loadProfile();
 };
 
-// อัปเดตรายชื่อในกล่อง Dropdown ด้านบน
 function updateUserDropdown() {
     const selector = document.getElementById('userSelector');
-    selector.innerHTML = ""; // ล้างของเก่า
+    selector.innerHTML = ""; 
     
     userList.forEach(user => {
         const option = document.createElement("option");
         option.value = user;
         option.text = user;
-        if(user === currentUser) option.selected = true; // เลือกคนที่กำลังใช้ให้เป็นค่าเริ่มต้น
+        if(user === currentUser) option.selected = true;
         selector.appendChild(option);
     });
 }
 
-// ฟังก์ชันเพิ่มผู้ใช้ใหม่
 function addNewUser() {
     const newName = prompt("กรุณาพิมพ์ชื่อผู้ใช้ใหม่ (เช่น พ่อ, แม่, แฟน):");
     
-    // เช็กว่าพิมพ์ชื่อมาจริงๆ และไม่ซ้ำกับคนเก่า
     if(newName && newName.trim() !== "") {
         const name = newName.trim();
         
@@ -53,7 +47,6 @@ function addNewUser() {
             localStorage.setItem('fitbite_userList', JSON.stringify(userList));
         }
         
-        // สลับไปใช้ชื่อใหม่ทันที
         currentUser = name;
         localStorage.setItem('fitbite_currentUser', currentUser);
         
@@ -62,12 +55,11 @@ function addNewUser() {
     }
 }
 
-// ฟังก์ชันตอนกดสลับชื่อจากกล่อง Dropdown
 function switchUser() {
     const selector = document.getElementById('userSelector');
     currentUser = selector.value;
     localStorage.setItem('fitbite_currentUser', currentUser);
-    loadProfile(); // โหลดข้อมูลของคนนั้นขึ้นมา
+    loadProfile(); 
 }
 
 function saveProfile() {
@@ -97,6 +89,7 @@ function saveProfile() {
 
 function loadProfile() {
     document.getElementById('profileNameDisplay').innerText = currentUser;
+    document.getElementById('historyName').innerText = currentUser; // ชื่อในหน้าต่างประวัติ
 
     const profile = JSON.parse(localStorage.getItem(`fitbite_${currentUser}_profile`));
     const calories = localStorage.getItem(`fitbite_${currentUser}_calories`) || 0;
@@ -110,7 +103,6 @@ function loadProfile() {
         document.getElementById('activity').value = profile.activity;
         updateDashboard(profile.bmi, profile.tdee);
     } else {
-        // ถ้าเป็นคนใหม่ยังไม่มีข้อมูล ให้เคลียร์ช่องให้ว่าง
         document.getElementById('weight').value = "";
         document.getElementById('height').value = "";
         document.getElementById('age').value = "";
@@ -123,9 +115,11 @@ function updateDashboard(bmi, tdee) {
     document.getElementById('tdeeDisplay').innerText = tdee;
 }
 
+// ล้างข้อมูลแคลอรี และ ล้างประวัติการกินด้วย
 function resetCalories() {
-    if(confirm(`ต้องการรีเซ็ตแคลอรีของ ${currentUser} ใช่หรือไม่?`)) {
+    if(confirm(`ต้องการรีเซ็ตแคลอรีและประวัติการกินวันนี้ของ ${currentUser} ใช่หรือไม่?`)) {
         localStorage.setItem(`fitbite_${currentUser}_calories`, 0);
+        localStorage.removeItem(`fitbite_${currentUser}_history`); 
         document.getElementById('calDisplay').innerText = 0;
     }
 }
@@ -136,17 +130,60 @@ async function analyzeFood(event) {
 
     document.getElementById('loading').classList.remove('hidden');
 
+    // จำลองเวลาประมวลผล 2 วินาที แล้วใส่ชื่ออาหาร+แคลอรี
     setTimeout(() => {
         addCalories(450, "ข้าวกะเพราไก่ไข่ดาว (ระบบจำลอง)");
     }, 2000);
 }
 
+// อัปเดตฟังก์ชันนี้ให้บันทึกประวัติด้วย
 function addCalories(cal, foodName) {
     document.getElementById('loading').classList.add('hidden');
+    
+    // 1. บวกแคลอรีรวม
     let currentCal = parseInt(localStorage.getItem(`fitbite_${currentUser}_calories`) || 0);
     currentCal += cal;
-    
     localStorage.setItem(`fitbite_${currentUser}_calories`, currentCal);
     document.getElementById('calDisplay').innerText = currentCal;
+
+    // 2. บันทึกลงประวัติ
+    let history = JSON.parse(localStorage.getItem(`fitbite_${currentUser}_history`) || "[]");
+    
+    // ดึงเวลาปัจจุบันมาบันทึกด้วย
+    const timeNow = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+    
+    history.push({ name: foodName, cal: cal, time: timeNow });
+    localStorage.setItem(`fitbite_${currentUser}_history`, JSON.stringify(history));
+
     alert(`วิเคราะห์สำเร็จ: ${foodName}\nบวกเพิ่ม ${cal} kcal ให้ ${currentUser}`);
+}
+
+// ----- ระบบเปิด/ปิด หน้าต่างประวัติ -----
+function openHistory() {
+    const history = JSON.parse(localStorage.getItem(`fitbite_${currentUser}_history`) || "[]");
+    const listEl = document.getElementById('historyList');
+    listEl.innerHTML = ""; // ล้างหน้าจอเก่า
+
+    if(history.length === 0) {
+        listEl.innerHTML = "<div class='text-center text-gray-400 mt-10'>ยังไม่มีประวัติการกินในวันนี้</div>";
+    } else {
+        // วนลูปสร้างรายการอาหาร
+        history.forEach((item) => {
+            listEl.innerHTML += `
+                <li class="flex justify-between items-center bg-gray-50 p-3 rounded-lg border shadow-sm">
+                    <div>
+                        <div class="font-bold text-gray-700">${item.name}</div>
+                        <div class="text-xs text-gray-500 mt-1">🕒 เวลา: ${item.time}</div>
+                    </div>
+                    <div class="font-bold text-orange-500 bg-orange-100 px-3 py-1 rounded-full">+${item.cal} kcal</div>
+                </li>
+            `;
+        });
+    }
+
+    document.getElementById('historyModal').classList.remove('hidden');
+}
+
+function closeHistory() {
+    document.getElementById('historyModal').classList.add('hidden');
 }
