@@ -4,7 +4,7 @@ let tempFoodData = null;
 let activeTab = 'home'; 
 
 // ==========================================
-// 🚀 รหัส API KEY ของ Google Gemini
+// 🚀 รหัส API KEY ของคุณ (ถูกต้องแล้วครับ!)
 const GEMINI_API_KEY = "AQ.Ab8RN6Ln8hJ_VmQjW3Tr0pOH4cwjjESyCFEyAcZg0XfF9FIwtw";
 // ==========================================
 
@@ -303,7 +303,7 @@ function saveManualFood() {
 }
 
 // ==========================================
-// 📸 ระบบ AI วิเคราะห์ภาพ (อัปเดตระบบแปลงภาพ)
+// 📸 ระบบ AI วิเคราะห์ภาพ
 // ==========================================
 async function analyzeFood(event) {
     const file = event.target.files[0];
@@ -315,9 +315,8 @@ async function analyzeFood(event) {
     reader.onload = function(e) {
         const img = new Image();
         img.onload = async function() {
-            // สร้าง Canvas เพื่อย่อและบังคับให้รูปเป็น JPEG 100%
             const canvas = document.createElement('canvas');
-            const MAX_WIDTH = 800; // ย่อขนาดภาพให้ส่งไวขึ้น
+            const MAX_WIDTH = 800;
             let width = img.width;
             let height = img.height;
 
@@ -329,23 +328,18 @@ async function analyzeFood(event) {
             canvas.height = height;
             
             const ctx = canvas.getContext('2d');
-            
-            // กรณีเป็นภาพ PNG แบบมีพื้นใส ให้เทพื้นสีขาวไปก่อน (AI ชอบภาพชัดเจน)
             ctx.fillStyle = "white";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(img, 0, 0, width, height);
             
-            // แปลงรูปจากหน้าจอเข้าเป็น JPEG 
             const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
             const base64Image = compressedDataUrl.split(',')[1];
             
-            // ส่งไปหา AI พร้อม Prompt ที่รัดกุมขึ้น
             sendToGemini(base64Image); 
         }
         
-        // ถ้าไฟล์รูปอ่านแล้วมีปัญหา (เช่น .avif) บางทีเบราว์เซอร์เก่าไม่รองรับ ให้แสดง Error
         img.onerror = function() {
-            alert("รูปภาพที่ถ่ายมีนามสกุลที่ไม่รองรับ ลองตั้งค่ากล้องให้เซฟเป็น .JPG หรือถ่ายจากแอปกล้องปกติใหม่นะครับ");
+            alert("รูปภาพนามสกุลนี้ไม่รองรับ กรุณาใช้ไฟล์ JPG หรือ PNG นะครับ");
             document.getElementById('loading').classList.add('hidden');
         };
         img.src = e.target.result;
@@ -353,7 +347,6 @@ async function analyzeFood(event) {
     reader.readAsDataURL(file);
 }
 
-// ฟังก์ชันยิง API 
 async function sendToGemini(base64Image) {
     try {
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
@@ -370,13 +363,11 @@ async function sendToGemini(base64Image) {
         });
 
         if (!response.ok) {
-            // ดักจับ Error เผื่อรหัส API ผิด
             const errData = await response.json();
             throw new Error(`API Error: ${errData.error?.message || response.statusText}`);
         }
 
         const data = await response.json();
-        
         let resultText = data.candidates[0].content.parts[0].text;
         resultText = resultText.replace(/```json/g, "").replace(/```/g, "").trim();
         
@@ -395,14 +386,7 @@ async function sendToGemini(base64Image) {
 
     } catch (error) {
         console.error("Gemini Error:", error);
-        
-        // ถ้าขึ้นข้อความนี้ แปลว่า API Key ตัวนี้มีปัญหาครับ
-        if (error.message.includes("API Error") || error.message.includes("API_KEY")) {
-             alert("เกิดปัญหาเรื่อง API Key: รหัสของคุณอาจจะพิมพ์ผิด หรือยังไม่เปิดใช้งานใน Google Cloud ลองเช็ค API Key อีกครั้งครับ\n" + error.message);
-        } else {
-             alert("AI มองภาพไม่ชัดเจน หรือรูปแบบอาหารซับซ้อนเกินไป ลองถ่ายอีกครั้งนะครับ");
-        }
-        
+        alert("ขออภัยครับ ถ่ายภาพใหม่อีกครั้ง หรือลองถ่ายมุมที่เห็นอาหารชัดเจนขึ้นนะครับ\n(ข้อผิดพลาด: " + error.message + ")");
         document.getElementById('loading').classList.add('hidden');
         document.getElementById('cameraInput').value = "";
     }
