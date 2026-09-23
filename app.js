@@ -4,8 +4,8 @@ let tempFoodData = null;
 let activeTab = 'home'; 
 
 // ==========================================
-// 🚀 รหัส API KEY ของคุณ (ถูกต้องแล้วครับ!)
-const GEMINI_API_KEY = "AQ.Ab8RN6Ln8hJ_VmQjW3Tr0pOH4cwjjESyCFEyAcZg0XfF9FIwtw";
+// 🚀 รหัส API KEY ใหม่ของคุณ (Google ระบบใหม่)
+const GEMINI_API_KEY = "AQ.Ab8RN6KZT3TUOvBNpWPg_QWZf9rh_GbUauxvjTUpQoqW7Iaypg";
 // ==========================================
 
 window.onload = () => {
@@ -303,7 +303,7 @@ function saveManualFood() {
 }
 
 // ==========================================
-// 📸 ระบบ AI วิเคราะห์ภาพ
+// 📸 ระบบ AI วิเคราะห์ภาพ 
 // ==========================================
 async function analyzeFood(event) {
     const file = event.target.files[0];
