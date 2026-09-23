@@ -1,38 +1,73 @@
 let currentUser = ""; 
+let userList = []; // เก็บรายชื่อคนทั้งหมดในแอป
 
 window.onload = () => {
-    const savedUser = localStorage.getItem('fitbite_currentUser');
-    if(savedUser) {
-        loginAs(savedUser);
+    // โหลดรายชื่อผู้ใช้ที่เคยมีในระบบ
+    const savedUsers = localStorage.getItem('fitbite_userList');
+    if(savedUsers) {
+        userList = JSON.parse(savedUsers);
     }
+
+    // ถ้ายังไม่เคยมีใครใช้งานเลย ให้สร้างโปรไฟล์เริ่มต้นชื่อ "ฉัน"
+    if(userList.length === 0) {
+        userList.push("ฉัน");
+        localStorage.setItem('fitbite_userList', JSON.stringify(userList));
+    }
+
+    // โหลดชื่อคนที่ใช้งานล่าสุด
+    const lastUser = localStorage.getItem('fitbite_currentUser');
+    if(lastUser && userList.includes(lastUser)) {
+        currentUser = lastUser;
+    } else {
+        currentUser = userList[0];
+    }
+
+    updateUserDropdown();
+    loadProfile();
 };
 
-function login() {
-    const name = document.getElementById('usernameInput').value.trim();
-    if(!name) {
-        alert("กรุณาพิมพ์ชื่อของคุณก่อนครับ");
-        return;
+// อัปเดตรายชื่อในกล่อง Dropdown ด้านบน
+function updateUserDropdown() {
+    const selector = document.getElementById('userSelector');
+    selector.innerHTML = ""; // ล้างของเก่า
+    
+    userList.forEach(user => {
+        const option = document.createElement("option");
+        option.value = user;
+        option.text = user;
+        if(user === currentUser) option.selected = true; // เลือกคนที่กำลังใช้ให้เป็นค่าเริ่มต้น
+        selector.appendChild(option);
+    });
+}
+
+// ฟังก์ชันเพิ่มผู้ใช้ใหม่
+function addNewUser() {
+    const newName = prompt("กรุณาพิมพ์ชื่อผู้ใช้ใหม่ (เช่น พ่อ, แม่, แฟน):");
+    
+    // เช็กว่าพิมพ์ชื่อมาจริงๆ และไม่ซ้ำกับคนเก่า
+    if(newName && newName.trim() !== "") {
+        const name = newName.trim();
+        
+        if(!userList.includes(name)) {
+            userList.push(name);
+            localStorage.setItem('fitbite_userList', JSON.stringify(userList));
+        }
+        
+        // สลับไปใช้ชื่อใหม่ทันที
+        currentUser = name;
+        localStorage.setItem('fitbite_currentUser', currentUser);
+        
+        updateUserDropdown();
+        loadProfile();
     }
-    loginAs(name);
 }
 
-function loginAs(name) {
-    currentUser = name;
-    localStorage.setItem('fitbite_currentUser', name);
-    
-    document.getElementById('loginScreen').classList.add('hidden');
-    document.getElementById('mainApp').classList.remove('hidden');
-    document.getElementById('currentUserName').innerText = name;
-    
-    loadProfile(); 
-}
-
-function logout() {
-    currentUser = "";
-    localStorage.removeItem('fitbite_currentUser'); 
-    document.getElementById('loginScreen').classList.remove('hidden');
-    document.getElementById('mainApp').classList.add('hidden');
-    document.getElementById('usernameInput').value = ""; 
+// ฟังก์ชันตอนกดสลับชื่อจากกล่อง Dropdown
+function switchUser() {
+    const selector = document.getElementById('userSelector');
+    currentUser = selector.value;
+    localStorage.setItem('fitbite_currentUser', currentUser);
+    loadProfile(); // โหลดข้อมูลของคนนั้นขึ้นมา
 }
 
 function saveProfile() {
@@ -61,6 +96,8 @@ function saveProfile() {
 }
 
 function loadProfile() {
+    document.getElementById('profileNameDisplay').innerText = currentUser;
+
     const profile = JSON.parse(localStorage.getItem(`fitbite_${currentUser}_profile`));
     const calories = localStorage.getItem(`fitbite_${currentUser}_calories`) || 0;
     document.getElementById('calDisplay').innerText = calories;
@@ -73,6 +110,7 @@ function loadProfile() {
         document.getElementById('activity').value = profile.activity;
         updateDashboard(profile.bmi, profile.tdee);
     } else {
+        // ถ้าเป็นคนใหม่ยังไม่มีข้อมูล ให้เคลียร์ช่องให้ว่าง
         document.getElementById('weight').value = "";
         document.getElementById('height').value = "";
         document.getElementById('age').value = "";
