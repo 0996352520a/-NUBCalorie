@@ -8,16 +8,14 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#14b8a6">
 </head>
-<body class="bg-gray-100 text-gray-800 pb-20">
+<body class="bg-gray-100 text-gray-800 pb-24">
 
-    <!-- แถบด้านบน: เปลี่ยนชื่อเป็น NUBCalorie -->
+    <!-- แถบด้านบน -->
     <div class="bg-teal-500 text-white p-4 flex justify-between items-center shadow-md sticky top-0 z-10">
         <span class="text-xl font-bold tracking-wide">NUBCalorie</span>
         <div class="flex items-center gap-2">
-            <!-- กล่องเลือกชื่อคน -->
             <select id="userSelector" onchange="switchUser()" class="text-gray-800 p-1.5 rounded-md text-sm w-24 font-bold border-none outline-none">
             </select>
-            <!-- ปุ่มเพิ่มคน -->
             <button onclick="addNewUser()" class="bg-yellow-400 text-teal-900 px-3 py-1.5 rounded-md text-sm font-bold shadow active:bg-yellow-500">➕ เพิ่มคน</button>
         </div>
     </div>
@@ -25,61 +23,169 @@
     <!-- หน้าต่างแอปหลัก -->
     <div id="mainApp" class="p-4 max-w-md mx-auto">
         
-        <!-- แดชบอร์ดสรุปข้อมูล -->
-        <div class="bg-white rounded-xl shadow p-5 mb-5 text-center relative overflow-hidden">
-            <h2 class="text-gray-500 text-sm">โควตาแคลอรีวันนี้ (TDEE)</h2>
-            <div class="text-4xl font-bold text-teal-600 my-2"><span id="tdeeDisplay">0</span> kcal</div>
+        <!-- แดชบอร์ดสรุปแคลอรี -->
+        <div class="bg-white rounded-xl shadow p-5 mb-4 text-center">
+            <div class="flex justify-between items-center text-xs text-gray-500 mb-1">
+                <span>TDEE ฐาน: <strong id="tdeeDisplay">0</strong> kcal</span>
+                <span>เป้าหมาย: <strong id="goalDisplay" class="text-teal-600">-</strong></span>
+            </div>
             
+            <h2 class="text-gray-500 text-xs font-semibold uppercase tracking-wider mt-2">โควตาแคลอรีตามเป้าหมาย</h2>
+            <div class="text-4xl font-extrabold text-teal-600 my-1"><span id="targetCalDisplay">0</span> <span class="text-lg font-normal text-gray-500">kcal/วัน</span></div>
+            
+            <!-- สรุปการกิน vs เป้าหมาย -->
             <div class="flex justify-around mt-4 border-t pt-4">
                 <div class="flex flex-col items-center">
-                    <div class="text-xs text-gray-400">กินไปแล้ว</div>
+                    <div class="text-xs text-gray-400">กินไปแล้ววันนี้</div>
                     <div class="text-xl font-bold text-orange-500"><span id="calDisplay">0</span> kcal</div>
-                    <!-- ปุ่มเปิดดูประวัติ -->
-                    <button onclick="openHistory()" class="mt-2 text-xs bg-blue-50 text-blue-600 px-3 py-1 rounded-full border border-blue-200 active:bg-blue-100">📋 ดูประวัติการกิน</button>
+                    <button onclick="openHistory()" class="mt-2 text-xs bg-teal-50 text-teal-700 px-3 py-1 rounded-full border border-teal-200 active:bg-teal-100 font-semibold">📋 ประวัติอาหารวันนี้</button>
                 </div>
-                <div class="flex flex-col items-center">
+                <div class="flex flex-col items-center border-l pl-4">
                     <div class="text-xs text-gray-400">BMI ของคุณ</div>
                     <div class="text-xl font-bold text-blue-500 mt-1" id="bmiDisplay">0.0</div>
+                    <div class="text-[10px] text-gray-400 mt-1" id="bmiStatus">-</div>
                 </div>
             </div>
-            
-            <button onclick="resetCalories()" class="mt-5 text-xs text-red-400 underline">รีเซ็ตแคลอรีและประวัติวันนี้</button>
         </div>
 
-        <!-- ตั้งค่าโปรไฟล์ -->
+        <!-- การ์ดติดตามสารอาหารหลัก 3 หมู่ (Macros Tracking) -->
+        <div class="bg-white rounded-xl shadow p-4 mb-4">
+            <h3 class="font-bold text-sm text-gray-700 mb-3 flex items-center justify-between">
+                <span>🥗 สารอาหารที่ควรได้รับวันนี้</span>
+                <span class="text-[11px] text-gray-400 font-normal">(กินแล้ว / เป้าหมาย)</span>
+            </h3>
+            
+            <div class="space-y-3">
+                <!-- โปรตีน -->
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="font-bold text-blue-600">🍗 โปรตีน (Protein)</span>
+                        <span class="text-gray-600"><strong id="consumedProtein" class="text-blue-600">0</strong> / <span id="targetProtein">0</span> กรัม</span>
+                    </div>
+                    <div class="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
+                        <div id="barProtein" class="bg-blue-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- คาร์โบไฮเดรต -->
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="font-bold text-amber-600">🍚 คาร์โบไฮเดรต (Carbs)</span>
+                        <span class="text-gray-600"><strong id="consumedCarbs" class="text-amber-600">0</strong> / <span id="targetCarbs">0</span> กรัม</span>
+                    </div>
+                    <div class="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
+                        <div id="barCarbs" class="bg-amber-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- ไขมัน -->
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="font-bold text-rose-500">🥑 ไขมันดี (Fat)</span>
+                        <span class="text-gray-600"><strong id="consumedFat" class="text-rose-500">0</strong> / <span id="targetFat">0</span> กรัม</span>
+                    </div>
+                    <div class="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
+                        <div id="barFat" class="bg-rose-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mt-3 pt-3 border-t">
+                <button onclick="resetCalories()" class="text-xs text-red-400 hover:text-red-600 underline">รีเซ็ตข้อมูลการกินวันนี้</button>
+            </div>
+        </div>
+
+        <!-- ตั้งค่าโปรไฟล์ & เป้าหมาย -->
         <div class="bg-white rounded-xl shadow p-5 mb-5">
             <h2 class="font-bold text-lg mb-3">ข้อมูลส่วนตัวของ <span id="profileNameDisplay" class="text-teal-600"></span></h2>
+            
             <div class="grid grid-cols-2 gap-3 mb-3">
-                <input type="number" id="weight" placeholder="น้ำหนัก (กก.)" class="border p-2 rounded w-full">
-                <input type="number" id="height" placeholder="ส่วนสูง (ซม.)" class="border p-2 rounded w-full">
-                <input type="number" id="age" placeholder="อายุ (ปี)" class="border p-2 rounded w-full">
-                <select id="gender" class="border p-2 rounded w-full bg-white">
-                    <option value="male">ชาย</option>
-                    <option value="female">หญิง</option>
+                <div>
+                    <label class="text-xs text-gray-500">น้ำหนัก (กก.)</label>
+                    <input type="number" id="weight" placeholder="เช่น 65" class="border p-2 rounded w-full mt-1">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500">ส่วนสูง (ซม.)</label>
+                    <input type="number" id="height" placeholder="เช่น 170" class="border p-2 rounded w-full mt-1">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500">อายุ (ปี)</label>
+                    <input type="number" id="age" placeholder="เช่น 25" class="border p-2 rounded w-full mt-1">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500">เพศกำเนิด</label>
+                    <select id="gender" class="border p-2 rounded w-full mt-1 bg-white">
+                        <option value="male">ชาย</option>
+                        <option value="female">หญิง</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="text-xs text-gray-500">ระดับกิจกรรม</label>
+                <select id="activity" class="border p-2 rounded w-full mt-1 bg-white text-sm">
+                    <option value="1.2">น้อยมาก (นั่งทำงานออฟฟิศ ไม่ออกกำลัง)</option>
+                    <option value="1.375">เบาๆ (ออกกำลังกาย 1-3 วัน/สัปดาห์)</option>
+                    <option value="1.55">ปานกลาง (ออกกำลังกาย 3-5 วัน/สัปดาห์)</option>
+                    <option value="1.725">หนัก (ออกกำลังกาย 6-7 วัน/สัปดาห์)</option>
                 </select>
             </div>
-            <select id="activity" class="border p-2 rounded w-full mb-4 bg-white">
-                <option value="1.2">ออกกำลังกายน้อย (นั่งทำงาน)</option>
-                <option value="1.55">ปานกลาง (3-5 วัน/สัปดาห์)</option>
-                <option value="1.725">มาก (ออกกำลังหนักทุกวัน)</option>
-            </select>
-            <button onclick="saveProfile()" class="bg-teal-500 text-white w-full py-3 rounded-lg font-bold shadow-md active:bg-teal-600">💾 บันทึก & คำนวณ</button>
+
+            <!-- เพิ่มตัวเลือกเป้าหมายสุขภาพ -->
+            <div class="mb-4">
+                <label class="text-xs text-gray-500 font-bold">🎯 เป้าหมายของคุณ</label>
+                <select id="goal" class="border-2 border-teal-400 p-2.5 rounded-lg w-full mt-1 bg-teal-50 text-teal-900 font-semibold text-sm">
+                    <option value="lose">🔻 ลดน้ำหนัก / ลดไขมัน (-500 kcal)</option>
+                    <option value="maintain">⚖️ รักษาน้ำหนัก / เน้นสุขภาพ (เท่าเดิม)</option>
+                    <option value="gain">🔺 เพิ่มน้ำหนัก / สร้างกล้ามเนื้อ (+400 kcal)</option>
+                </select>
+            </div>
+
+            <button onclick="saveProfile()" class="bg-teal-500 text-white w-full py-3 rounded-lg font-bold shadow-md active:bg-teal-600">💾 คำนวณแผนโภชนาการ</button>
         </div>
     </div>
 
     <!-- ปุ่มกล้องถ่ายรูป -->
     <div class="fixed bottom-5 left-0 w-full flex justify-center px-4 z-20">
-        <label class="bg-orange-500 text-white px-6 py-3 rounded-full font-bold shadow-lg flex items-center cursor-pointer active:bg-orange-600 w-full max-w-md justify-center">
-            📸 ถ่ายภาพอาหารนับแคล
+        <label class="bg-orange-500 text-white px-6 py-3.5 rounded-full font-bold shadow-xl flex items-center cursor-pointer active:bg-orange-600 w-full max-w-md justify-center border-2 border-white">
+            📸 ถ่ายภาพอาหารวิเคราะห์สารอาหาร
             <input type="file" accept="image/*" capture="environment" id="cameraInput" class="hidden" onchange="analyzeFood(event)">
         </label>
     </div>
 
+    <!-- หน้าต่างผลการวิเคราะห์อาหาร (Food Detail Modal) -->
+    <div id="foodResultModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl p-5 max-w-sm w-full shadow-2xl text-center">
+            <div class="text-4xl mb-2">🍽️</div>
+            <h3 class="font-bold text-lg text-gray-800" id="resultFoodName">ชื่ออาหาร</h3>
+            <div class="text-3xl font-extrabold text-orange-500 my-2"><span id="resultCalories">0</span> <span class="text-sm font-normal text-gray-500">kcal</span></div>
+            
+            <!-- การ์ดสารอาหาร 3 หมู่ของมื้อนี้ -->
+            <div class="grid grid-cols-3 gap-2 my-4 bg-gray-50 p-3 rounded-xl border">
+                <div class="p-2 bg-blue-50 rounded-lg">
+                    <div class="text-[10px] text-blue-600 font-bold">โปรตีน</div>
+                    <div class="text-base font-bold text-blue-700" id="resultProtein">0g</div>
+                </div>
+                <div class="p-2 bg-amber-50 rounded-lg">
+                    <div class="text-[10px] text-amber-600 font-bold">คาร์บ</div>
+                    <div class="text-base font-bold text-amber-700" id="resultCarbs">0g</div>
+                </div>
+                <div class="p-2 bg-rose-50 rounded-lg">
+                    <div class="text-[10px] text-rose-600 font-bold">ไขมัน</div>
+                    <div class="text-base font-bold text-rose-700" id="resultFat">0g</div>
+                </div>
+            </div>
+
+            <button onclick="confirmAddFood()" class="bg-teal-500 text-white w-full py-2.5 rounded-lg font-bold shadow active:bg-teal-600">✅ บันทึกเข้าประวัติ</button>
+            <button onclick="closeResultModal()" class="mt-2 text-gray-400 text-xs underline block w-full">ยกเลิก</button>
+        </div>
+    </div>
+
     <!-- หน้าต่างประวัติการกิน -->
     <div id="historyModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-end justify-center z-40 transition-opacity">
-        <div class="bg-white w-full max-w-md rounded-t-2xl p-5 pb-24 shadow-2xl h-3/4 flex flex-col">
+        <div class="bg-white w-full max-w-md rounded-t-2xl p-5 pb-24 shadow-2xl h-4/5 flex flex-col">
             <div class="flex justify-between items-center border-b pb-3 mb-3">
-                <h3 class="font-bold text-lg text-teal-700">ประวัติการกินของ <span id="historyName"></span></h3>
+                <h3 class="font-bold text-lg text-teal-700">ประวัติอาหารของ <span id="historyName"></span></h3>
                 <button onclick="closeHistory()" class="text-gray-500 font-bold text-3xl leading-none">&times;</button>
             </div>
             <ul id="historyList" class="space-y-3 overflow-y-auto flex-1 p-1">
@@ -87,15 +193,16 @@
         </div>
     </div>
 
-    <!-- หน้าต่างโหลดโหลด -->
+    <!-- หน้าต่างโหลด AI -->
     <div id="loading" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white p-5 rounded-lg text-center shadow-xl">
-            <div class="text-3xl mb-2 animate-bounce">🤖</div>
-            <div class="font-bold text-gray-700">AI กำลังวิเคราะห์...</div>
+        <div class="bg-white p-6 rounded-2xl text-center shadow-xl">
+            <div class="text-4xl mb-3 animate-bounce">🤖</div>
+            <div class="font-bold text-gray-800">AI กำลังคำนวณแคลและสารอาหาร...</div>
+            <div class="text-xs text-gray-400 mt-1">กำลังแยกโปรตีน, คาร์บ, ไขมัน</div>
         </div>
     </div>
 
-    <!-- บังคับโหลดไฟล์ใหม่ V6 -->
-    <script src="app.js?v=6"></script>
+    <!-- บังคับโหลดไฟล์ใหม่ V7 -->
+    <script src="app.js?v=7"></script>
 </body>
 </html>
