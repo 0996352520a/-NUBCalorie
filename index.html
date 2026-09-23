@@ -8,10 +8,10 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#14b8a6">
 </head>
-<body class="bg-gray-100 text-gray-800 pb-24">
+<body class="bg-gray-100 text-gray-800 pb-28">
 
-    <!-- แถบด้านบน -->
-    <div class="bg-teal-500 text-white p-4 flex justify-between items-center shadow-md sticky top-0 z-10">
+    <!-- แถบด้านบน Header -->
+    <div class="bg-teal-500 text-white p-4 flex justify-between items-center shadow-md sticky top-0 z-20">
         <span class="text-xl font-bold tracking-wide">NUBCalorie</span>
         <div class="flex items-center gap-2">
             <select id="userSelector" onchange="switchUser()" class="text-gray-800 p-1.5 rounded-md text-sm w-24 font-bold border-none outline-none">
@@ -20,8 +20,14 @@
         </div>
     </div>
 
-    <!-- หน้าต่างแอปหลัก -->
-    <div id="mainApp" class="p-4 max-w-md mx-auto">
+    <!-- แถบสลับหน้าระหว่าง "หน้าหลัก" กับ "ข้อมูลทั้งหมด" -->
+    <div class="bg-teal-600 text-white flex text-sm font-bold shadow sticky top-[60px] z-10 max-w-md mx-auto">
+        <button id="tabHome" onclick="switchTab('home')" class="py-2.5 flex-1 text-center border-b-4 border-yellow-300 text-yellow-300 transition">🏠 หน้าหลัก</button>
+        <button id="tabAllData" onclick="switchTab('allData')" class="py-2.5 flex-1 text-center border-b-4 border-transparent text-teal-100 hover:text-white transition">📊 ข้อมูลทั้งหมด</button>
+    </div>
+
+    <!-- ==================== หน้าที่ 1: หน้าหลัก (เหมือนเดิม 100%) ==================== -->
+    <div id="homeView" class="p-4 max-w-md mx-auto">
         
         <!-- แดชบอร์ดสรุปแคลอรี -->
         <div class="bg-white rounded-xl shadow p-5 mb-4 text-center">
@@ -131,7 +137,6 @@
                 </select>
             </div>
 
-            <!-- เพิ่มตัวเลือกเป้าหมายสุขภาพ -->
             <div class="mb-4">
                 <label class="text-xs text-gray-500 font-bold">🎯 เป้าหมายของคุณ</label>
                 <select id="goal" class="border-2 border-teal-400 p-2.5 rounded-lg w-full mt-1 bg-teal-50 text-teal-900 font-semibold text-sm">
@@ -145,22 +150,130 @@
         </div>
     </div>
 
-    <!-- ปุ่มกล้องถ่ายรูป -->
-    <div class="fixed bottom-5 left-0 w-full flex justify-center px-4 z-20">
-        <label class="bg-orange-500 text-white px-6 py-3.5 rounded-full font-bold shadow-xl flex items-center cursor-pointer active:bg-orange-600 w-full max-w-md justify-center border-2 border-white">
+    <!-- ==================== หน้าที่ 2: หน้าข้อมูลทั้งหมด (แยกแสดงอย่างเป็นระเบียบ) ==================== -->
+    <div id="allDataView" class="hidden p-4 max-w-md mx-auto space-y-4">
+        <div class="bg-gradient-to-r from-teal-500 to-teal-700 text-white p-5 rounded-2xl shadow-lg">
+            <div class="text-xs opacity-80 uppercase tracking-wider">รายงานสุขภาพและโภชนาการ</div>
+            <h2 class="text-2xl font-extrabold mt-1">ข้อมูลทั้งหมดของ <span id="allDataUserName">-</span></h2>
+            <p class="text-xs text-teal-100 mt-1">สรุปค่าร่างกาย แคลอรีคงเหลือ และประวัติอาหารอย่างละเอียด</p>
+        </div>
+
+        <!-- การ์ด 1: ข้อมูลสุขภาพร่างกาย -->
+        <div class="bg-white rounded-2xl shadow p-5 border border-gray-100">
+            <h3 class="font-bold text-gray-800 text-sm mb-3">🩺 ค่าทางกายภาพ & พลังงาน</h3>
+            <div class="grid grid-cols-2 gap-2 text-xs">
+                <div class="bg-gray-50 p-2.5 rounded-xl border">
+                    <span class="text-gray-400 block">น้ำหนัก / ส่วนสูง</span>
+                    <strong class="text-sm text-gray-800" id="adWeightHeight">- กก. / - ซม.</strong>
+                </div>
+                <div class="bg-gray-50 p-2.5 rounded-xl border">
+                    <span class="text-gray-400 block">อายุ / เพศ</span>
+                    <strong class="text-sm text-gray-800" id="adAgeGender">- ปี / -</strong>
+                </div>
+                <div class="bg-gray-50 p-2.5 rounded-xl border">
+                    <span class="text-gray-400 block">BMI (ดัชนีมวลกาย)</span>
+                    <strong class="text-sm text-blue-600" id="adBmi">-</strong>
+                    <div class="text-[10px] text-gray-500" id="adBmiStatus">-</div>
+                </div>
+                <div class="bg-gray-50 p-2.5 rounded-xl border">
+                    <span class="text-gray-400 block">BMR (เผาผลาญขั้นต่ำ)</span>
+                    <strong class="text-sm text-gray-700" id="adBmr">- kcal</strong>
+                </div>
+                <div class="bg-gray-50 p-2.5 rounded-xl border">
+                    <span class="text-gray-400 block">TDEE (เผาผลาญรวม)</span>
+                    <strong class="text-sm text-teal-700" id="adTdee">- kcal</strong>
+                </div>
+                <div class="bg-gray-50 p-2.5 rounded-xl border">
+                    <span class="text-gray-400 block">เป้าหมายปัจจุบัน</span>
+                    <strong class="text-sm text-orange-600" id="adGoal">-</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- การ์ด 2: สมดุลพลังงานและโควตาคงเหลือ -->
+        <div class="bg-white rounded-2xl shadow p-5 border border-gray-100">
+            <h3 class="font-bold text-gray-800 text-sm mb-3">🔥 สมดุลพลังงานวันนี้ (Energy Balance)</h3>
+            <div class="grid grid-cols-3 gap-2 text-center">
+                <div class="bg-teal-50 p-3 rounded-xl border border-teal-100">
+                    <div class="text-[10px] text-teal-700 font-semibold">เป้าหมาย</div>
+                    <div class="text-base font-extrabold text-teal-800 mt-1" id="adTargetCal">0</div>
+                    <div class="text-[9px] text-teal-600">kcal</div>
+                </div>
+                <div class="bg-orange-50 p-3 rounded-xl border border-orange-100">
+                    <div class="text-[10px] text-orange-700 font-semibold">กินแล้ว</div>
+                    <div class="text-base font-extrabold text-orange-600 mt-1" id="adConsumedCal">0</div>
+                    <div class="text-[9px] text-orange-600">kcal</div>
+                </div>
+                <div class="bg-purple-50 p-3 rounded-xl border border-purple-100">
+                    <div class="text-[10px] text-purple-700 font-semibold" id="adRemainingLabel">คงเหลือ</div>
+                    <div class="text-base font-extrabold text-purple-700 mt-1" id="adRemainingCal">0</div>
+                    <div class="text-[9px] text-purple-600">kcal</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- การ์ด 3: สารอาหารครบ 3 หมู่ -->
+        <div class="bg-white rounded-2xl shadow p-5 border border-gray-100">
+            <h3 class="font-bold text-gray-800 text-sm mb-3">🥩 สัดส่วนสารอาหารหลัก (เป้าหมาย vs กินจริง)</h3>
+            <div class="space-y-3 text-xs">
+                <div class="p-3 bg-blue-50 rounded-xl border border-blue-100">
+                    <div class="flex justify-between font-bold text-blue-800">
+                        <span>🍗 โปรตีน</span>
+                        <span><span id="adPConsumed">0</span> / <span id="adPTarget">0</span> g (<span id="adPPct">0%</span>)</span>
+                    </div>
+                    <div class="w-full bg-blue-200 h-2 rounded-full overflow-hidden mt-1.5">
+                        <div id="adPBar" class="bg-blue-600 h-2 rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="p-3 bg-amber-50 rounded-xl border border-amber-100">
+                    <div class="flex justify-between font-bold text-amber-800">
+                        <span>🍚 คาร์โบไฮเดรต</span>
+                        <span><span id="adCConsumed">0</span> / <span id="adCTarget">0</span> g (<span id="adCPct">0%</span>)</span>
+                    </div>
+                    <div class="w-full bg-amber-200 h-2 rounded-full overflow-hidden mt-1.5">
+                        <div id="adCBar" class="bg-amber-600 h-2 rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="p-3 bg-rose-50 rounded-xl border border-rose-100">
+                    <div class="flex justify-between font-bold text-rose-800">
+                        <span>🥑 ไขมัน</span>
+                        <span><span id="adFConsumed">0</span> / <span id="adFTarget">0</span> g (<span id="adFPct">0%</span>)</span>
+                    </div>
+                    <div class="w-full bg-rose-200 h-2 rounded-full overflow-hidden mt-1.5">
+                        <div id="adFBar" class="bg-rose-600 h-2 rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- การ์ด 4: ประวัติอาหารพร้อมปุ่มลบรายการ -->
+        <div class="bg-white rounded-2xl shadow p-5 border border-gray-100">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="font-bold text-gray-800 text-sm">📋 รายการอาหารทั้งหมดวันนี้</h3>
+                <button onclick="resetCalories()" class="text-xs text-red-500 underline font-semibold">ล้างข้อมูลทั้งหมด</button>
+            </div>
+            <ul id="adHistoryList" class="space-y-2.5">
+            </ul>
+        </div>
+    </div>
+
+    <!-- ปุ่มกล้องถ่ายรูปสีส้มอันใหญ่ (ปุ่มเดิมที่คุ้นเคย) -->
+    <div class="fixed bottom-5 left-0 w-full flex justify-center px-4 z-30 pointer-events-none">
+        <label class="bg-orange-500 text-white px-6 py-3.5 rounded-full font-bold shadow-2xl flex items-center cursor-pointer active:bg-orange-600 w-full max-w-md justify-center border-2 border-white pointer-events-auto">
             📸 ถ่ายภาพอาหารวิเคราะห์สารอาหาร
             <input type="file" accept="image/*" capture="environment" id="cameraInput" class="hidden" onchange="analyzeFood(event)">
         </label>
     </div>
 
-    <!-- หน้าต่างผลการวิเคราะห์อาหาร (Food Detail Modal) -->
+    <!-- หน้าต่างพรีวิวสารอาหารจากการถ่ายภาพ -->
     <div id="foodResultModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-2xl p-5 max-w-sm w-full shadow-2xl text-center">
             <div class="text-4xl mb-2">🍽️</div>
             <h3 class="font-bold text-lg text-gray-800" id="resultFoodName">ชื่ออาหาร</h3>
             <div class="text-3xl font-extrabold text-orange-500 my-2"><span id="resultCalories">0</span> <span class="text-sm font-normal text-gray-500">kcal</span></div>
             
-            <!-- การ์ดสารอาหาร 3 หมู่ของมื้อนี้ -->
             <div class="grid grid-cols-3 gap-2 my-4 bg-gray-50 p-3 rounded-xl border">
                 <div class="p-2 bg-blue-50 rounded-lg">
                     <div class="text-[10px] text-blue-600 font-bold">โปรตีน</div>
@@ -176,12 +289,12 @@
                 </div>
             </div>
 
-            <button onclick="confirmAddFood()" class="bg-teal-500 text-white w-full py-2.5 rounded-lg font-bold shadow active:bg-teal-600">✅ บันทึกเข้าประวัติ</button>
+            <button onclick="confirmAddFood()" class="bg-teal-500 text-white w-full py-2.5 rounded-xl font-bold shadow active:bg-teal-600">✅ บันทึกเข้าประวัติ</button>
             <button onclick="closeResultModal()" class="mt-2 text-gray-400 text-xs underline block w-full">ยกเลิก</button>
         </div>
     </div>
 
-    <!-- หน้าต่างประวัติการกิน -->
+    <!-- หน้าต่างประวัติการกิน (Popup แบบเดิมของหน้าแรก) -->
     <div id="historyModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-end justify-center z-40 transition-opacity">
         <div class="bg-white w-full max-w-md rounded-t-2xl p-5 pb-24 shadow-2xl h-4/5 flex flex-col">
             <div class="flex justify-between items-center border-b pb-3 mb-3">
@@ -202,7 +315,7 @@
         </div>
     </div>
 
-    <!-- บังคับโหลดไฟล์ใหม่ V7 -->
-    <script src="app.js?v=7"></script>
+    <!-- บังคับโหลดไฟล์ใหม่ V9 -->
+    <script src="app.js?v=9"></script>
 </body>
 </html>
