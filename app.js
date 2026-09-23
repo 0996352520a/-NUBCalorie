@@ -4,8 +4,8 @@ let tempFoodData = null;
 let activeTab = 'home'; 
 
 // ==========================================
-// 🚀 รหัส API KEY ใหม่ของคุณ (Google ระบบใหม่)
-const GEMINI_API_KEY = "AQ.Ab8RN6KZT3TUOvBNpWPg_QWZf9rh_GbUauxvjTUpQoqW7Iaypg";
+// 🚀 รหัส API KEY ที่ถูกต้อง 100% (แก้ตัว l เรียบร้อย)
+const GEMINI_API_KEY = "AQ.Ab8RN6KZT3TUOvBNpWPg_QWZf9rh_GbUauxvjTUpQoqW7laypg";
 // ==========================================
 
 window.onload = () => {
@@ -303,7 +303,7 @@ function saveManualFood() {
 }
 
 // ==========================================
-// 📸 ระบบ AI วิเคราะห์ภาพ 
+// 📸 ระบบ AI วิเคราะห์ภาพ (ใช้การเชื่อมต่อมาตรฐาน)
 // ==========================================
 async function analyzeFood(event) {
     const file = event.target.files[0];
@@ -349,9 +349,14 @@ async function analyzeFood(event) {
 
 async function sendToGemini(base64Image) {
     try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+        const cleanApiKey = GEMINI_API_KEY.trim(); 
+
+        // ส่งแบบมาตรฐานโดยเอา Key ไปต่อท้าย URL
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${cleanApiKey}`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { 
+                "Content-Type": "application/json"
+            },
             body: JSON.stringify({
                 contents: [{
                     parts: [
