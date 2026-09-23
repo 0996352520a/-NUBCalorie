@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FitBite</title>
+    <title>NUBCalorie</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#14b8a6">
 </head>
 <body class="bg-gray-100 text-gray-800 pb-20">
 
-    <!-- แถบด้านบน: เลือกระบุตัวตนจากในแอป -->
+    <!-- แถบด้านบน: เปลี่ยนชื่อเป็น NUBCalorie -->
     <div class="bg-teal-500 text-white p-4 flex justify-between items-center shadow-md sticky top-0 z-10">
-        <span class="text-xl font-bold">FitBite</span>
+        <span class="text-xl font-bold tracking-wide">NUBCalorie</span>
         <div class="flex items-center gap-2">
             <!-- กล่องเลือกชื่อคน -->
             <select id="userSelector" onchange="switchUser()" class="text-gray-800 p-1.5 rounded-md text-sm w-24 font-bold border-none outline-none">
@@ -75,7 +75,7 @@
         </label>
     </div>
 
-    <!-- หน้าต่างประวัติการกิน (ซ่อนไว้ เริ่มแรก) -->
+    <!-- หน้าต่างประวัติการกิน -->
     <div id="historyModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-end justify-center z-40 transition-opacity">
         <div class="bg-white w-full max-w-md rounded-t-2xl p-5 pb-24 shadow-2xl h-3/4 flex flex-col">
             <div class="flex justify-between items-center border-b pb-3 mb-3">
@@ -83,7 +83,6 @@
                 <button onclick="closeHistory()" class="text-gray-500 font-bold text-3xl leading-none">&times;</button>
             </div>
             <ul id="historyList" class="space-y-3 overflow-y-auto flex-1 p-1">
-                <!-- รายการอาหารจะถูกนำมาแสดงตรงนี้ -->
             </ul>
         </div>
     </div>
@@ -96,7 +95,7 @@
         </div>
     </div>
 
-    <!-- บังคับโหลดไฟล์ใหม่ V5 -->
-    <script src="app.js?v=5"></script>
+    <!-- บังคับโหลดไฟล์ใหม่ V6 -->
+    <script src="app.js?v=6"></script>
 </body>
 </html>
