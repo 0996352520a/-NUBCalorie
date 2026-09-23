@@ -1,6 +1,6 @@
 {
-    "name": "FitBite Tracker",
-    "short_name": "FitBite",
+    "name": "NUBCalorie Tracker",
+    "short_name": "NUBCalorie",
     "start_url": "./index.html",
     "display": "standalone",
     "background_color": "#ffffff",
