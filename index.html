@@ -14,14 +14,14 @@
     <div id="loginScreen" class="p-5 max-w-md mx-auto mt-20 bg-white rounded-xl shadow text-center">
         <h1 class="text-3xl font-bold mb-2 text-teal-600">FitBite</h1>
         <p class="mb-6 text-gray-500">กรุณาพิมพ์ชื่อของคุณเพื่อเข้าใช้งาน<br>(ข้อมูลจะถูกแยกตามชื่อที่พิมพ์)</p>
-        <input type="text" id="usernameInput" placeholder="เช่น: สมชาย, แม่, John" class="border p-3 rounded w-full mb-4 text-center text-lg">
+        <input type="text" id="usernameInput" placeholder="เช่น: พ่อ, แม่, สมชาย" class="border p-3 rounded w-full mb-4 text-center text-lg">
         <button onclick="login()" class="bg-teal-500 text-white w-full py-3 rounded-lg font-bold text-lg">เข้าใช้งาน</button>
     </div>
 
     <!-- หน้าต่างแอปหลัก (จะซ่อนไว้จนกว่าจะใส่ชื่อ) -->
     <div id="mainApp" class="hidden">
         
-        <!-- แถบด้านบน (เพิ่มปุ่มสลับผู้ใช้) -->
+        <!-- แถบด้านบน -->
         <div class="bg-teal-500 text-white p-4 flex justify-between items-center shadow-md">
             <span class="text-lg font-bold">FitBite</span>
             <span class="text-sm">ผู้ใช้: <span id="currentUserName" class="font-bold text-yellow-300"></span> <button onclick="logout()" class="ml-3 underline text-gray-200">สลับผู้ใช้</button></span>
@@ -83,6 +83,7 @@
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <!-- จุดที่แก้ปัญหาการกดไม่ไป: บังคับโหลดไฟล์ใหม่ -->
+    <script src="app.js?v=3"></script>
 </body>
 </html>
