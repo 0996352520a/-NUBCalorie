@@ -4,7 +4,7 @@ let tempFoodData = null;
 let activeTab = 'home'; 
 
 // ==========================================
-// 🚀 รหัส API KEY ของ Google Gemini (ของคุณที่ให้มา)
+// 🚀 รหัส API KEY ของ Google Gemini
 const GEMINI_API_KEY = "AQ.Ab8RN6Ln8hJ_VmQjW3Tr0pOH4cwjjESyCFEyAcZg0XfF9FIwtw";
 // ==========================================
 
@@ -264,11 +264,7 @@ function resetCalories() {
     }
 }
 
-// ==========================================
-// ✍️ ระบบเพิ่มอาหารเอง (Manual Entry)
-// ==========================================
 function openManualEntry() {
-    // ล้างค่าเก่าในกล่องข้อความก่อนเปิด
     document.getElementById('manualFoodName').value = "";
     document.getElementById('manualCalories').value = "";
     document.getElementById('manualProtein').value = "";
@@ -289,20 +285,15 @@ function saveManualFood() {
     const f = parseInt(document.getElementById('manualFat').value) || 0;
 
     if(!name || cal === 0) {
-        alert("กรุณาพิมพ์ชื่ออาหารและตัวเลขแคลอรี่รวมให้ครบถ้วนครับ");
-        return;
+        alert("กรุณาพิมพ์ชื่ออาหารและตัวเลขแคลอรี่รวมให้ครบถ้วนครับ"); return;
     }
 
     let current = getTodayNutrition();
-    current.calories += cal;
-    current.protein += p;
-    current.carbs += c;
-    current.fat += f;
+    current.calories += cal; current.protein += p; current.carbs += c; current.fat += f;
     localStorage.setItem(`nubcalorie_${currentUser}_todayNutrition`, JSON.stringify(current));
 
     let history = JSON.parse(localStorage.getItem(`nubcalorie_${currentUser}_history`) || "[]");
     const timeNow = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-    
     history.push({ name: name, cal: cal, p: p, c: c, f: f, time: timeNow });
     localStorage.setItem(`nubcalorie_${currentUser}_history`, JSON.stringify(history));
 
@@ -312,7 +303,7 @@ function saveManualFood() {
 }
 
 // ==========================================
-// 📸 ระบบ AI ของจริง (Gemini Vision)
+// 📸 ระบบ AI วิเคราะห์ภาพ (แก้ปัญหาภาพไม่ชัด / Error)
 // ==========================================
 async function analyzeFood(event) {
     const file = event.target.files[0];
@@ -320,44 +311,80 @@ async function analyzeFood(event) {
 
     document.getElementById('loading').classList.remove('hidden');
 
+    // ฟังก์ชันย่อขนาดภาพก่อนส่ง (ลดขนาดลงเหลือความกว้างไม่เกิน 800px)
     const reader = new FileReader();
-    reader.onload = async function(e) {
-        const base64Image = e.target.result.split(',')[1];
-        
-        try {
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [
-                            { text: "นี่คือภาพอาหารอะไร? จงวิเคราะห์ให้ละเอียดว่าเป็นอาหารจานไหน ประเมินแคลอรี่รวม และคำนวณปริมาณสารอาหารหลัก (โปรตีน, คาร์โบไฮเดรต, ไขมัน) สำหรับ 1 จานขนาดปกติ ตอบกลับมาเฉพาะข้อมูลแบบ JSON เท่านั้น ห้ามมีคำอธิบายเพิ่มเติม ห้ามมี Markdown รูปแบบที่ต้องการคือ: {\"name\": \"ชื่ออาหาร (ภาษาไทย)\", \"cal\": ตัวเลขแคลอรี่รวม, \"p\": ตัวเลขโปรตีนหน่วยเป็นกรัม, \"c\": ตัวเลขคาร์บหน่วยเป็นกรัม, \"f\": ตัวเลขไขมันหน่วยเป็นกรัม}" },
-                            { inline_data: { mime_type: "image/jpeg", data: base64Image } }
-                        ]
-                    }]
-                })
-            });
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = async function() {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 800;
+            let width = img.width;
+            let height = img.height;
 
-            const data = await response.json();
-            let resultText = data.candidates[0].content.parts[0].text;
-            resultText = resultText.replace(/```json/g, "").replace(/```/g, "").trim();
-            const foodData = JSON.parse(resultText);
-
-            tempFoodData = {
-                name: foodData.name, cal: parseInt(foodData.cal), p: parseInt(foodData.p), c: parseInt(foodData.c), f: parseInt(foodData.f)
-            };
-
-            document.getElementById('loading').classList.add('hidden');
-            showFoodResultModal(tempFoodData);
-
-        } catch (error) {
-            console.error(error);
-            alert("AI มองภาพไม่ชัดเจน หรือเกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองถ่ายภาพใหม่อีกครั้งนะครับ");
-            document.getElementById('loading').classList.add('hidden');
-            document.getElementById('cameraInput').value = "";
+            if (width > MAX_WIDTH) {
+                height = Math.round((height *= MAX_WIDTH / width));
+                width = MAX_WIDTH;
+            }
+            canvas.width = width;
+            canvas.height = height;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // แปลงกลับเป็น Base64 ที่ขนาดเล็กลง (คุณภาพ 80%)
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+            const base64Image = compressedDataUrl.split(',')[1];
+            
+            sendToGemini(base64Image); // ส่งรูปที่ย่อแล้วไปให้ AI
         }
-    };
+        img.src = e.target.result;
+    }
     reader.readAsDataURL(file);
+}
+
+// แยกฟังก์ชันยิง API ออกมาต่างหากให้เป็นระเบียบ
+async function sendToGemini(base64Image) {
+    try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                contents: [{
+                    parts: [
+                        { text: "วิเคราะห์ภาพนี้ว่าเป็นอาหารอะไร ประเมินแคลอรี่และสารอาหารสำหรับ 1 จาน ห้ามมีคำอธิบาย ห้ามมี markdown ให้ตอบกลับเป็น JSON format เท่านั้น ตัวอย่าง: {\"name\": \"ข้าวผัดหมู\", \"cal\": 550, \"p\": 20, \"c\": 50, \"f\": 15}" },
+                        { inline_data: { mime_type: "image/jpeg", data: base64Image } }
+                    ]
+                }]
+            })
+        });
+
+        if (!response.ok) throw new Error("การเชื่อมต่อกับ AI มีปัญหา");
+
+        const data = await response.json();
+        
+        let resultText = data.candidates[0].content.parts[0].text;
+        // ทำความสะอาดข้อความ ป้องกัน Error
+        resultText = resultText.replace(/```json/g, "").replace(/```/g, "").trim();
+        
+        const foodData = JSON.parse(resultText);
+
+        tempFoodData = {
+            name: foodData.name || "อาหารไม่ทราบชื่อ", 
+            cal: parseInt(foodData.cal) || 0, 
+            p: parseInt(foodData.p) || 0, 
+            c: parseInt(foodData.c) || 0, 
+            f: parseInt(foodData.f) || 0
+        };
+
+        document.getElementById('loading').classList.add('hidden');
+        showFoodResultModal(tempFoodData);
+
+    } catch (error) {
+        console.error("AI Error:", error);
+        alert("ขออภัยครับ ถ่ายภาพใหม่อีกครั้ง หรือลองถ่ายมุมที่เห็นอาหารชัดเจนขึ้นนะครับ (AI อ่านข้อมูลไม่สำเร็จ)");
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('cameraInput').value = "";
+    }
 }
 
 function showFoodResultModal(food) {
