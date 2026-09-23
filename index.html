@@ -20,7 +20,7 @@
         </div>
     </div>
 
-    <!-- แถบสลับหน้าระหว่าง "หน้าหลัก" กับ "ข้อมูลทั้งหมด" -->
+    <!-- แถบสลับหน้า -->
     <div class="bg-teal-600 text-white flex text-sm font-bold shadow sticky top-[60px] z-10 max-w-md mx-auto">
         <button id="tabHome" onclick="switchTab('home')" class="py-2.5 flex-1 text-center border-b-4 border-yellow-300 text-yellow-300 transition">🏠 หน้าหลัก</button>
         <button id="tabAllData" onclick="switchTab('allData')" class="py-2.5 flex-1 text-center border-b-4 border-transparent text-teal-100 hover:text-white transition">📊 ข้อมูลทั้งหมด</button>
@@ -28,7 +28,6 @@
 
     <!-- ==================== หน้าที่ 1: หน้าหลัก ==================== -->
     <div id="homeView" class="p-4 max-w-md mx-auto">
-        
         <div class="bg-white rounded-xl shadow p-5 mb-4 text-center">
             <div class="flex justify-between items-center text-xs text-gray-500 mb-1">
                 <span>TDEE ฐาน: <strong id="tdeeDisplay">0</strong> kcal</span>
@@ -141,7 +140,8 @@
             <div class="text-xs opacity-80 uppercase tracking-wider">รายงานสุขภาพและโภชนาการ</div>
             <h2 class="text-2xl font-extrabold mt-1">ข้อมูลทั้งหมดของ <span id="allDataUserName">-</span></h2>
         </div>
-        <!-- (ซ่อนโค้ดส่วนนี้ให้เหมือนเดิม เพื่อประหยัดพื้นที่ แต่อยู่ครบครับ) -->
+        
+        <!-- (การ์ดแสดงข้อมูล ซ่อนเพื่อประหยัดพื้นที่ แต่อยู่ครบ) -->
         <div class="bg-white rounded-2xl shadow p-5 border border-gray-100">
             <h3 class="font-bold text-gray-800 text-sm mb-3">🩺 ค่าทางกายภาพ & พลังงาน</h3>
             <div class="grid grid-cols-2 gap-2 text-xs">
@@ -172,6 +172,7 @@
                 </div>
             </div>
         </div>
+        
         <div class="bg-white rounded-2xl shadow p-5 border border-gray-100">
             <h3 class="font-bold text-gray-800 text-sm mb-3">🔥 สมดุลพลังงานวันนี้</h3>
             <div class="grid grid-cols-3 gap-2 text-center">
@@ -201,15 +202,60 @@
         </div>
     </div>
 
-    <!-- ปุ่มถ่ายภาพ (ปุ่มลอย) -->
+    <!-- ==================== ปุ่มด้านล่าง (จดเอง & ถ่ายภาพ) ==================== -->
     <div class="fixed bottom-5 left-0 w-full flex justify-center px-4 z-30 pointer-events-none">
-        <label class="bg-orange-500 text-white px-6 py-3.5 rounded-full font-bold shadow-2xl flex items-center cursor-pointer active:bg-orange-600 w-full max-w-md justify-center border-2 border-white pointer-events-auto">
-            📸 ถ่ายภาพอาหารวิเคราะห์สารอาหาร
-            <input type="file" accept="image/*" capture="environment" id="cameraInput" class="hidden" onchange="analyzeFood(event)">
-        </label>
+        <div class="flex w-full max-w-md gap-3 pointer-events-auto">
+            <!-- ปุ่มจดเอง -->
+            <button onclick="openManualEntry()" class="bg-teal-600 text-white px-5 py-3.5 rounded-full font-bold shadow-2xl flex items-center justify-center active:bg-teal-700 border-2 border-white shrink-0 transition">
+                ✍️ จดเอง
+            </button>
+            <!-- ปุ่มถ่ายภาพ -->
+            <label class="bg-orange-500 text-white flex-1 py-3.5 rounded-full font-bold shadow-2xl flex items-center justify-center cursor-pointer active:bg-orange-600 border-2 border-white transition">
+                📸 ถ่ายภาพ AI
+                <input type="file" accept="image/*" capture="environment" id="cameraInput" class="hidden" onchange="analyzeFood(event)">
+            </label>
+        </div>
     </div>
 
-    <!-- หน้าต่างพรีวิวสารอาหารจากการถ่ายภาพ -->
+    <!-- ==================== หน้าต่างเพิ่มอาหารเอง (Manual Entry Modal) ==================== -->
+    <div id="manualEntryModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl">
+            <div class="text-3xl text-center mb-2">✍️</div>
+            <h3 class="font-bold text-lg text-gray-800 text-center mb-4">เพิ่มข้อมูลอาหารเอง</h3>
+            
+            <div class="space-y-3">
+                <div>
+                    <label class="text-xs text-gray-500 font-bold">ชื่ออาหาร <span class="text-red-500">*</span></label>
+                    <input type="text" id="manualFoodName" placeholder="เช่น อกไก่ปั่นเซเว่น" class="border p-2.5 rounded-lg w-full mt-1 bg-gray-50 font-bold text-teal-800">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500 font-bold">แคลอรี่รวม (kcal) <span class="text-red-500">*</span></label>
+                    <input type="number" id="manualCalories" placeholder="0" class="border p-2.5 rounded-lg w-full mt-1 bg-gray-50 font-bold text-orange-600 text-lg">
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <div>
+                        <label class="text-[10px] text-blue-600 font-bold">โปรตีน (g)</label>
+                        <input type="number" id="manualProtein" placeholder="0" class="border p-2 rounded-lg w-full mt-1 bg-blue-50 text-blue-800">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-amber-600 font-bold">คาร์บ (g)</label>
+                        <input type="number" id="manualCarbs" placeholder="0" class="border p-2 rounded-lg w-full mt-1 bg-amber-50 text-amber-800">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-rose-600 font-bold">ไขมัน (g)</label>
+                        <input type="number" id="manualFat" placeholder="0" class="border p-2 rounded-lg w-full mt-1 bg-rose-50 text-rose-800">
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-5">
+                <button onclick="saveManualFood()" class="bg-teal-500 text-white w-full py-2.5 rounded-xl font-bold shadow active:bg-teal-600 text-lg">✅ บันทึกข้อมูล</button>
+                <button onclick="closeManualEntry()" class="mt-3 text-gray-400 text-xs underline block w-full text-center">ยกเลิก</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- หน้าต่างพรีวิวสารอาหารจากการถ่ายภาพ (AI) -->
     <div id="foodResultModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-2xl p-5 max-w-sm w-full shadow-2xl text-center">
             <div class="text-4xl mb-2">🍽️</div>
@@ -256,6 +302,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=12"></script>
+    <script src="app.js?v=13"></script>
 </body>
 </html>
