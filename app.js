@@ -4,8 +4,8 @@ let tempFoodData = null;
 let activeTab = 'home'; 
 
 // ==========================================
-// 🚀 รหัส API KEY ของ Hugging Face (ไม่มีบั๊ก 100%)
-const HF_API_KEY = "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";
+// 🚀 รหัส API KEY ของ Google Gemini (รหัสจากโปรเจกต์ใหม่ของคุณ)
+const GEMINI_API_KEY = "AQ.Ab8RN6I6EfunLm-c2jUAQI_h9H0tWx8Z_pZln3APrbCotEjNdw";
 // ==========================================
 
 // 💡 ฐานข้อมูลอาหารสำหรับระบบแนะนำ
@@ -330,7 +330,7 @@ function openHistory() {
 function closeHistory() { document.getElementById('historyModal').classList.add('hidden'); }
 
 // ==========================================
-// 📸 ระบบ AI วิเคราะห์ภาพ (ใช้ Hugging Face)
+// 📸 ระบบ AI วิเคราะห์ภาพด้วย Google Gemini
 // ==========================================
 async function analyzeFood(event) {
     const file = event.target.files[0];
@@ -340,49 +340,83 @@ async function analyzeFood(event) {
 
     const reader = new FileReader();
     reader.onload = async function(e) {
-        const base64Image = e.target.result;
-        
-        try {
-            // ใช้ Model วิเคราะห์ภาพตัวที่เสถียรของ Hugging Face
-            const response = await fetch("https://api-inference.huggingface.co/models/llava-hf/llava-1.5-7b-hf", {
-                method: "POST",
-                headers: { 
-                    "Authorization": `Bearer ${HF_API_KEY}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    inputs: "นี่คือภาพอาหารอะไรในไทย? ประเมินแคลอรี่และสารอาหารสำหรับ 1 จาน ตอบเป็น JSON เท่านั้น รูปแบบ: {\"name\": \"ชื่ออาหาร\", \"cal\": 500, \"p\": 20, \"c\": 50, \"f\": 10}",
-                    image: base64Image
-                })
-            });
+        const img = new Image();
+        img.onload = async function() {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 800;
+            let width = img.width;
+            let height = img.height;
 
-            if (!response.ok) throw new Error("เครือข่ายมีปัญหา ลองอีกครั้งครับ");
-
-            const data = await response.json();
+            if (width > MAX_WIDTH) {
+                height = Math.round((height *= MAX_WIDTH / width));
+                width = MAX_WIDTH;
+            }
+            canvas.width = width;
+            canvas.height = height;
             
-            // สกัดข้อมูล JSON
-            let resultText = data[0]?.generated_text || "{}";
-            const match = resultText.match(/\{[\s\S]*\}/);
-            const foodData = match ? JSON.parse(match[0]) : { name: "อาหารที่สแกนเจอ", cal: 350, p: 15, c: 30, f: 10 };
-
-            tempFoodData = {
-                name: foodData.name || "อาหารไม่ทราบชื่อ", 
-                cal: parseInt(foodData.cal) || 0, p: parseInt(foodData.p) || 0, c: parseInt(foodData.c) || 0, f: parseInt(foodData.f) || 0
-            };
-
-            document.getElementById('loading').classList.add('hidden');
-            showFoodResultModal(tempFoodData);
-
-        } catch (error) {
-            console.error("AI Error:", error);
-            // กรณีระบบวิเคราะห์ขัดข้องชั่วคราว จะเปิดหน้าจดเองให้เพื่อไม่ให้สะดุด
-            alert("ตอนนี้ AI กำลังอัปเดตระบบ หรือรูปภาพอาจจะไม่ชัดเจนพอ ให้บันทึกเองก่อนได้เลยครับ");
-            document.getElementById('loading').classList.add('hidden');
-            document.getElementById('cameraInput').value = "";
-            openManualEntry(); 
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = "white";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // ตัดคำว่า data:image/jpeg;base64, ออกเพื่อให้เหลือแต่รหัสภาพเพียวๆ
+            const base64Image = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+            
+            sendToGemini(base64Image); 
         }
+        img.onerror = function() {
+            alert("รูปภาพนามสกุลนี้ไม่รองรับ กรุณาใช้ไฟล์ JPG หรือ PNG นะครับ");
+            document.getElementById('loading').classList.add('hidden');
+        };
+        img.src = e.target.result;
     };
     reader.readAsDataURL(file);
+}
+
+async function sendToGemini(base64Image) {
+    try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                contents: [{
+                    parts: [
+                        { text: "วิเคราะห์ภาพนี้ว่าเป็นอาหารอะไรในไทย? ประเมินแคลอรี่และสารอาหารสำหรับ 1 จาน ตอบเป็น JSON เท่านั้น รูปแบบ: {\"name\": \"ชื่ออาหาร\", \"cal\": 500, \"p\": 20, \"c\": 50, \"f\": 10}" },
+                        { inline_data: { mime_type: "image/jpeg", data: base64Image } }
+                    ]
+                }]
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error?.message || "เชื่อมต่อ Google ไม่สำเร็จ");
+        }
+
+        const data = await response.json();
+        
+        let resultText = data.candidates[0].content.parts[0].text;
+        resultText = resultText.replace(/```json/g, "").replace(/```/g, "").trim();
+        
+        const foodData = JSON.parse(resultText);
+
+        tempFoodData = {
+            name: foodData.name || "อาหารไม่ทราบชื่อ", 
+            cal: parseInt(foodData.cal) || 0, p: parseInt(foodData.p) || 0, c: parseInt(foodData.c) || 0, f: parseInt(foodData.f) || 0
+        };
+
+        document.getElementById('loading').classList.add('hidden');
+        showFoodResultModal(tempFoodData);
+
+    } catch (error) {
+        console.error("Gemini Error:", error);
+        // แสดง Error ของจริงให้เห็นชัดๆ ว่าผิดที่ตรงไหน
+        alert("❌ ข้อผิดพลาดจาก Google: " + error.message);
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('cameraInput').value = "";
+    }
 }
 
 function showFoodResultModal(food) {
