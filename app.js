@@ -3,10 +3,41 @@ let userList = [];
 let tempFoodData = null; 
 let activeTab = 'home'; 
 
+// 🚀 รหัส API KEY ของคุณ
+const GEMINI_API_KEY = "AQ.Ab8RN6KZT3TUOvBNpWPg_QWZf9rh_GbUauxvjTUpQoqW7Iaypg";
+
 // ==========================================
-// 🚀 รหัส API KEY ที่ถูกต้อง 100% (แก้ตัว l เรียบร้อย)
-const GEMINI_API_KEY = "AQ.Ab8RN6KZT3TUOvBNpWPg_QWZf9rh_GbUauxvjTUpQoqW7laypg";
+// 💡 ฐานข้อมูลอาหารสำหรับระบบแนะนำ (Mock Database)
 // ==========================================
+let currentFoodPref = 'clean'; // ค่าเริ่มต้นเป็นคลีน
+const foodDB = {
+    clean: [
+        { name: "สลัดอกไก่ย่างน้ำใส", cal: 200 },
+        { name: "ยำวุ้นเส้นหมูสับ (ไม่มัน)", cal: 250 },
+        { name: "สุกี้น้ำไก่ (เน้นผัก)", cal: 280 },
+        { name: "ไข่ต้ม 2 ฟอง + แซนด์วิชโฮลวีต", cal: 300 },
+        { name: "ปลาซาบะย่างซีอิ๊ว + ผักต้ม", cal: 320 },
+        { name: "อกไก่ย่าง + ข้าวกล้อง 1 ทัพพี", cal: 350 },
+        { name: "สเต็กปลาแซลมอน", cal: 400 },
+        { name: "โยเกิร์ตไขมันต่ำ + ผลไม้รวม", cal: 150 },
+        { name: "ข้าวโอ๊ตต้มใส่นมแอลมอนด์", cal: 220 },
+        { name: "แกงจืดเต้าหู้หมูสับ (ไม่ซดน้ำ)", cal: 150 },
+        { name: "น้ำเต้าหู้หวานน้อย + ธัญพืช", cal: 120 }
+    ],
+    general: [
+        { name: "ราดหน้าเส้นใหญ่หมู", cal: 400 },
+        { name: "ก๋วยเตี๋ยวเส้นเล็กต้มยำ", cal: 450 },
+        { name: "ยำมาม่าใส่หมูยอ", cal: 480 },
+        { name: "ส้มตำไทย + ไก่ย่าง", cal: 500 },
+        { name: "ข้าวผัดหมูใส่ไข่", cal: 550 },
+        { name: "ข้าวกะเพราหมูสับไข่ดาว", cal: 600 },
+        { name: "ข้าวซอยไก่", cal: 600 },
+        { name: "ข้าวมันไก่ (ไม่หนัง)", cal: 650 },
+        { name: "ข้าวหมูแดงหมูกรอบ", cal: 750 },
+        { name: "ผัดไทยกุ้งสด", cal: 700 },
+        { name: "ชาบู/หมูกระทะ (ชุดเล็ก)", cal: 800 }
+    ]
+};
 
 window.onload = () => {
     const savedUsers = localStorage.getItem('nubcalorie_userList') || localStorage.getItem('fitbite_userList');
@@ -159,7 +190,7 @@ function getTodayNutrition() {
 }
 
 function updateNutritionUI(current, profile = null) {
-    if(!profile) profile = JSON.parse(localStorage.getItem(`nubcalorie_${currentUser}_profile`)) || { targetProtein: 1, targetCarbs: 1, targetFat: 1 };
+    if(!profile) profile = JSON.parse(localStorage.getItem(`nubcalorie_${currentUser}_profile`)) || { targetProtein: 1, targetCarbs: 1, targetFat: 1, targetCal: 2000 };
     
     document.getElementById('calDisplay').innerText = current.calories;
     document.getElementById('consumedProtein').innerText = current.protein;
@@ -169,6 +200,66 @@ function updateNutritionUI(current, profile = null) {
     document.getElementById('barProtein').style.width = `${Math.min(100, Math.round((current.protein / (profile.targetProtein || 1)) * 100))}%`;
     document.getElementById('barCarbs').style.width = `${Math.min(100, Math.round((current.carbs / (profile.targetCarbs || 1)) * 100))}%`;
     document.getElementById('barFat').style.width = `${Math.min(100, Math.round((current.fat / (profile.targetFat || 1)) * 100))}%`;
+
+    // อัปเดตระบบแนะนำอาหารทุกครั้งที่มีการเปลี่ยนแคลอรี
+    generateSuggestions(profile.targetCal || 0, current.calories || 0);
+}
+
+// ==========================================
+// 💡 ระบบแนะนำเมนูอาหาร (Food Recommender)
+// ==========================================
+function setFoodPreference(type) {
+    currentFoodPref = type;
+    
+    // เปลี่ยนสีปุ่มให้รู้ว่ากำลังเลือกอันไหนอยู่
+    if (type === 'clean') {
+        document.getElementById('btnCleanFood').className = "flex-1 py-2 text-[11px] font-bold rounded-md bg-white shadow text-green-600 transition";
+        document.getElementById('btnGeneralFood').className = "flex-1 py-2 text-[11px] font-bold rounded-md text-gray-500 hover:text-orange-500 transition";
+    } else {
+        document.getElementById('btnCleanFood').className = "flex-1 py-2 text-[11px] font-bold rounded-md text-gray-500 hover:text-green-600 transition";
+        document.getElementById('btnGeneralFood').className = "flex-1 py-2 text-[11px] font-bold rounded-md bg-white shadow text-orange-500 transition";
+    }
+    
+    // ดึงค่าแคลอรีมาคำนวณใหม่
+    const profile = JSON.parse(localStorage.getItem(`nubcalorie_${currentUser}_profile`)) || { targetCal: 0 };
+    const current = getTodayNutrition();
+    generateSuggestions(profile.targetCal, current.calories);
+}
+
+function generateSuggestions(targetCal = 0, consumedCal = 0) {
+    let remaining = targetCal - consumedCal;
+    document.getElementById('suggestRemaining').innerText = remaining;
+    
+    const listEl = document.getElementById('suggestionList');
+    listEl.innerHTML = "";
+
+    // ถ้าแคลอรีหมดแล้ว หรือเหลือน้อยมาก
+    if(remaining <= 50) {
+        listEl.innerHTML = `<div class="text-center text-xs text-red-500 py-3 font-bold bg-red-50 rounded-lg">🚫 โควตาวันนี้หมดแล้ว!<br>แนะนำดื่มน้ำเปล่า หรือชา/กาแฟดำ (ไม่หวาน)</div>`;
+        return;
+    }
+
+    // กรองเอาเฉพาะอาหารที่แคลอรี่ไม่เกินกว่าที่เหลืออยู่
+    let availableFoods = foodDB[currentFoodPref].filter(f => f.cal <= remaining);
+
+    if(availableFoods.length === 0) {
+        listEl.innerHTML = `<div class="text-center text-xs text-orange-500 py-3 font-bold bg-orange-50 rounded-lg">⚠️ แคลอรีเหลือน้อยเกินไป<br>แนะนำทานผลไม้สด หรือของว่างเบาๆ (ต่ำกว่า 100 kcal)</div>`;
+        return;
+    }
+
+    // สุ่มเรียงลำดับอาร์เรย์ใหม่ และเลือกมาแค่ 3 อย่าง
+    availableFoods = availableFoods.sort(() => 0.5 - Math.random());
+    const picked = availableFoods.slice(0, 3);
+
+    // สร้างกล่องแสดงผลเมนู
+    picked.forEach(item => {
+        listEl.innerHTML += `
+            <li class="flex justify-between items-center bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
+                <span class="text-xs font-bold text-gray-700">🍽️ ${item.name}</span>
+                <span class="text-[10px] font-extrabold text-teal-600 bg-teal-50 border border-teal-100 px-2 py-1 rounded-full">${item.cal} kcal</span>
+            </li>
+        `;
+    });
 }
 
 function renderAllDataView() {
@@ -303,7 +394,7 @@ function saveManualFood() {
 }
 
 // ==========================================
-// 📸 ระบบ AI วิเคราะห์ภาพ (ใช้การเชื่อมต่อมาตรฐาน)
+// 📸 ระบบ AI วิเคราะห์ภาพ
 // ==========================================
 async function analyzeFood(event) {
     const file = event.target.files[0];
@@ -351,11 +442,11 @@ async function sendToGemini(base64Image) {
     try {
         const cleanApiKey = GEMINI_API_KEY.trim(); 
 
-        // ส่งแบบมาตรฐานโดยเอา Key ไปต่อท้าย URL
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${cleanApiKey}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`, {
             method: "POST",
             headers: { 
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "x-goog-api-key": cleanApiKey
             },
             body: JSON.stringify({
                 contents: [{
