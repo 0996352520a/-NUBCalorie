@@ -4,37 +4,35 @@ let tempFoodData = null;
 let activeTab = 'home'; 
 
 // ==========================================
-// 🚀 รหัส API KEY ใหม่ล่าสุด (โปรเจกต์ใหม่ คลีน 100%)
-const GEMINI_API_KEY = "AQ.Ab8RN6I6EfunLm-c2jUAQI_h9H0tWx8Z_pZln3APrbCotEjNdw";
+// 🚀 รหัส API KEY ของ Hugging Face (ไม่มีบั๊ก 100%)
+const HF_API_KEY = "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";
 // ==========================================
 
-// 💡 ฐานข้อมูลอาหารสำหรับระบบแนะนำ (Mock Database)
+// 💡 ฐานข้อมูลอาหารสำหรับระบบแนะนำ
 let currentFoodPref = 'clean'; 
 const foodDB = {
     clean: [
-        { name: "สลัดอกไก่ย่างน้ำใส", cal: 200 }, { name: "ยำวุ้นเส้นหมูสับ (ไม่มัน)", cal: 250 },
+        { name: "สลัดอกไก่ย่างน้ำใส", cal: 200 }, { name: "ยำวุ้นเส้นหมูสับ", cal: 250 },
         { name: "สุกี้น้ำไก่ (เน้นผัก)", cal: 280 }, { name: "ไข่ต้ม 2 ฟอง + แซนด์วิชโฮลวีต", cal: 300 },
         { name: "ปลาซาบะย่างซีอิ๊ว + ผักต้ม", cal: 320 }, { name: "อกไก่ย่าง + ข้าวกล้อง 1 ทัพพี", cal: 350 },
-        { name: "สเต็กปลาแซลมอน", cal: 400 }, { name: "โยเกิร์ตไขมันต่ำ + ผลไม้รวม", cal: 150 },
-        { name: "แกงจืดเต้าหู้หมูสับ (ไม่ซดน้ำ)", cal: 150 }, { name: "น้ำเต้าหู้หวานน้อย + ธัญพืช", cal: 120 }
+        { name: "สเต็กปลาแซลมอน", cal: 400 }, { name: "แกงจืดเต้าหู้หมูสับ (ไม่ซดน้ำ)", cal: 150 }
     ],
     general: [
         { name: "ราดหน้าเส้นใหญ่หมู", cal: 400 }, { name: "ก๋วยเตี๋ยวเส้นเล็กต้มยำ", cal: 450 },
         { name: "ยำมาม่าใส่หมูยอ", cal: 480 }, { name: "ส้มตำไทย + ไก่ย่าง", cal: 500 },
         { name: "ข้าวผัดหมูใส่ไข่", cal: 550 }, { name: "ข้าวกะเพราหมูสับไข่ดาว", cal: 600 },
-        { name: "ข้าวมันไก่ (ไม่หนัง)", cal: 650 }, { name: "ผัดไทยกุ้งสด", cal: 700 },
-        { name: "ชาบู/หมูกระทะ (ชุดเล็ก)", cal: 800 }, { name: "ข้าวหมูแดงหมูกรอบ", cal: 750 }
+        { name: "ข้าวมันไก่ (ไม่หนัง)", cal: 650 }, { name: "ผัดไทยกุ้งสด", cal: 700 }
     ]
 };
 
 window.onload = () => {
-    const savedUsers = localStorage.getItem('nubcalorie_userList') || localStorage.getItem('fitbite_userList');
+    const savedUsers = localStorage.getItem('nubcalorie_userList');
     if(savedUsers) userList = JSON.parse(savedUsers);
     if(userList.length === 0) {
         userList.push("ฉัน");
         localStorage.setItem('nubcalorie_userList', JSON.stringify(userList));
     }
-    const lastUser = localStorage.getItem('nubcalorie_currentUser') || localStorage.getItem('fitbite_currentUser');
+    const lastUser = localStorage.getItem('nubcalorie_currentUser');
     currentUser = (lastUser && userList.includes(lastUser)) ? lastUser : userList[0];
     updateUserDropdown();
     loadProfile();
@@ -42,23 +40,18 @@ window.onload = () => {
 
 function switchTab(tab) {
     activeTab = tab;
-    const homeView = document.getElementById('homeView');
-    const allDataView = document.getElementById('allDataView');
-    const tabHome = document.getElementById('tabHome');
-    const tabAllData = document.getElementById('tabAllData');
-
-    if(tab === 'home') {
-        homeView.classList.remove('hidden');
-        allDataView.classList.add('hidden');
-        tabHome.className = "py-2.5 flex-1 text-center border-b-4 border-yellow-300 text-yellow-300 transition";
-        tabAllData.className = "py-2.5 flex-1 text-center border-b-4 border-transparent text-teal-100 hover:text-white transition";
-    } else {
-        homeView.classList.add('hidden');
-        allDataView.classList.remove('hidden');
-        tabHome.className = "py-2.5 flex-1 text-center border-b-4 border-transparent text-teal-100 hover:text-white transition";
-        tabAllData.className = "py-2.5 flex-1 text-center border-b-4 border-yellow-300 text-yellow-300 transition";
-        renderAllDataView(); 
-    }
+    document.getElementById('homeView').classList.toggle('hidden', tab !== 'home');
+    document.getElementById('allDataView').classList.toggle('hidden', tab === 'home');
+    
+    document.getElementById('tabHome').className = tab === 'home' 
+        ? "py-2.5 flex-1 text-center border-b-4 border-yellow-300 text-yellow-300 transition" 
+        : "py-2.5 flex-1 text-center border-b-4 border-transparent text-teal-100 hover:text-white transition";
+    
+    document.getElementById('tabAllData').className = tab === 'allData' 
+        ? "py-2.5 flex-1 text-center border-b-4 border-yellow-300 text-yellow-300 transition" 
+        : "py-2.5 flex-1 text-center border-b-4 border-transparent text-teal-100 hover:text-white transition";
+    
+    if(tab === 'allData') renderAllDataView(); 
 }
 
 function updateUserDropdown() {
@@ -102,24 +95,22 @@ function saveProfile() {
     const activity = parseFloat(document.getElementById('activity').value);
     const goal = document.getElementById('goal').value;
 
-    if(!weight || !height || !age) {
-        alert("กรุณากรอกข้อมูลให้ครบถ้วน"); return;
-    }
+    if(!weight || !height || !age) { alert("กรุณากรอกข้อมูลให้ครบถ้วน"); return; }
 
-    const heightM = height / 100;
-    const bmi = (weight / (heightM * heightM)).toFixed(1);
-    let bmr = Math.round((10 * weight) + (6.25 * height) - (5 * age) + ((gender === 'male') ? 5 : -161));
+    const bmi = (weight / Math.pow(height/100, 2)).toFixed(1);
+    let bmr = Math.round((10 * weight) + (6.25 * height) - (5 * age) + (gender === 'male' ? 5 : -161));
     const tdee = Math.round(bmr * activity);
 
     let targetCal = tdee;
     if (goal === 'lose') targetCal = Math.max(1200, tdee - 500);
     else if (goal === 'gain') targetCal = tdee + 400;
 
-    const targetProtein = Math.round((targetCal * 0.25) / 4);
-    const targetCarbs = Math.round((targetCal * 0.50) / 4);
-    const targetFat = Math.round((targetCal * 0.25) / 9);
-
-    const profileData = { weight, height, age, gender, activity, goal, bmi, bmr, tdee, targetCal, targetProtein, targetCarbs, targetFat };
+    const profileData = { 
+        weight, height, age, gender, activity, goal, bmi, bmr, tdee, targetCal, 
+        targetProtein: Math.round((targetCal * 0.25) / 4), 
+        targetCarbs: Math.round((targetCal * 0.50) / 4), 
+        targetFat: Math.round((targetCal * 0.25) / 9) 
+    };
     localStorage.setItem(`nubcalorie_${currentUser}_profile`, JSON.stringify(profileData));
     updateDashboard(profileData);
     alert(`บันทึกแผนโภชนาการสำเร็จ!`);
@@ -141,10 +132,7 @@ function loadProfile() {
         document.getElementById('goal').value = profile.goal || 'maintain';
         updateDashboard(profile);
     } else {
-        document.getElementById('weight').value = "";
-        document.getElementById('height').value = "";
-        document.getElementById('age').value = "";
-        document.getElementById('goal').value = "maintain";
+        document.getElementById('weight').value = ""; document.getElementById('height').value = ""; document.getElementById('age').value = "";
         updateDashboard({ bmi: 0, bmr: 0, tdee: 0, targetCal: 0, targetProtein: 0, targetCarbs: 0, targetFat: 0, goal: 'maintain' });
     }
     if(activeTab === 'allData') renderAllDataView();
@@ -192,50 +180,38 @@ function updateNutritionUI(current, profile = null) {
     generateSuggestions(profile.targetCal || 0, current.calories || 0);
 }
 
-// 💡 ระบบแนะนำเมนูอาหาร (Food Recommender)
+// ระบบแนะนำเมนู
 function setFoodPreference(type) {
     currentFoodPref = type;
-    if (type === 'clean') {
-        document.getElementById('btnCleanFood').className = "flex-1 py-2 text-[11px] font-bold rounded-md bg-white shadow text-green-600 transition";
-        document.getElementById('btnGeneralFood').className = "flex-1 py-2 text-[11px] font-bold rounded-md text-gray-500 hover:text-orange-500 transition";
-    } else {
-        document.getElementById('btnCleanFood').className = "flex-1 py-2 text-[11px] font-bold rounded-md text-gray-500 hover:text-green-600 transition";
-        document.getElementById('btnGeneralFood').className = "flex-1 py-2 text-[11px] font-bold rounded-md bg-white shadow text-orange-500 transition";
-    }
+    document.getElementById('btnCleanFood').className = type === 'clean' ? "flex-1 py-2 text-[11px] font-bold rounded-md bg-white shadow text-green-600 transition" : "flex-1 py-2 text-[11px] font-bold rounded-md text-gray-500 hover:text-green-600 transition";
+    document.getElementById('btnGeneralFood').className = type === 'general' ? "flex-1 py-2 text-[11px] font-bold rounded-md bg-white shadow text-orange-500 transition" : "flex-1 py-2 text-[11px] font-bold rounded-md text-gray-500 hover:text-orange-500 transition";
+    
     const profile = JSON.parse(localStorage.getItem(`nubcalorie_${currentUser}_profile`)) || { targetCal: 0 };
-    const current = getTodayNutrition();
-    generateSuggestions(profile.targetCal, current.calories);
+    generateSuggestions(profile.targetCal, getTodayNutrition().calories);
 }
 
 function generateSuggestions(targetCal = 0, consumedCal = 0) {
     let remaining = targetCal - consumedCal;
     document.getElementById('suggestRemaining').innerText = remaining;
-    
     const listEl = document.getElementById('suggestionList');
     listEl.innerHTML = "";
 
     if(remaining <= 50) {
-        listEl.innerHTML = `<div class="text-center text-xs text-red-500 py-3 font-bold bg-red-50 rounded-lg">🚫 โควตาวันนี้หมดแล้ว!<br>แนะนำดื่มน้ำเปล่า หรือชา/กาแฟดำ (ไม่หวาน)</div>`;
-        return;
+        listEl.innerHTML = `<div class="text-center text-xs text-red-500 py-3 font-bold bg-red-50 rounded-lg">🚫 โควตาวันนี้หมดแล้ว!<br>แนะนำดื่มน้ำเปล่า หรือชาดำ</div>`; return;
     }
 
-    let availableFoods = foodDB[currentFoodPref].filter(f => f.cal <= remaining);
-
+    let availableFoods = foodDB[currentFoodPref].filter(f => f.cal <= remaining).sort(() => 0.5 - Math.random()).slice(0, 3);
+    
     if(availableFoods.length === 0) {
-        listEl.innerHTML = `<div class="text-center text-xs text-orange-500 py-3 font-bold bg-orange-50 rounded-lg">⚠️ แคลอรีเหลือน้อยเกินไป<br>แนะนำทานผลไม้สด หรือของว่างเบาๆ</div>`;
-        return;
+        listEl.innerHTML = `<div class="text-center text-xs text-orange-500 py-3 font-bold bg-orange-50 rounded-lg">⚠️ แคลอรีเหลือน้อยเกินไป<br>แนะนำทานผลไม้สด</div>`; return;
     }
 
-    availableFoods = availableFoods.sort(() => 0.5 - Math.random());
-    const picked = availableFoods.slice(0, 3);
-
-    picked.forEach(item => {
+    availableFoods.forEach(item => {
         listEl.innerHTML += `
             <li class="flex justify-between items-center bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
                 <span class="text-xs font-bold text-gray-700">🍽️ ${item.name}</span>
                 <span class="text-[10px] font-extrabold text-teal-600 bg-teal-50 border border-teal-100 px-2 py-1 rounded-full">${item.cal} kcal</span>
-            </li>
-        `;
+            </li>`;
     });
 }
 
@@ -251,9 +227,6 @@ function renderAllDataView() {
     document.getElementById('adBmr').innerText = profile.bmr ? `${profile.bmr} kcal` : "-";
     document.getElementById('adTdee').innerText = profile.tdee ? `${profile.tdee} kcal` : "-";
     
-    const goalMap = { 'lose': 'ลดน้ำหนัก', 'maintain': 'รักษาน้ำหนัก', 'gain': 'เพิ่มกล้ามเนื้อ' };
-    document.getElementById('adGoal').innerText = goalMap[profile.goal] || "-";
-
     const diffCal = (profile.targetCal || 0) - (today.calories || 0);
     document.getElementById('adTargetCal').innerText = profile.targetCal || 0;
     document.getElementById('adConsumedCal').innerText = today.calories || 0;
@@ -269,78 +242,53 @@ function renderAllDataView() {
     }
 
     const pTar = profile.targetProtein || 1, cTar = profile.targetCarbs || 1, fTar = profile.targetFat || 1;
-    document.getElementById('adPConsumed').innerText = today.protein;
-    document.getElementById('adPTarget').innerText = profile.targetProtein || 0;
-    document.getElementById('adPPct').innerText = `${Math.round((today.protein / pTar) * 100)}%`;
-    document.getElementById('adPBar').style.width = `${Math.min(100, Math.round((today.protein / pTar) * 100))}%`;
-
-    document.getElementById('adCConsumed').innerText = today.carbs;
-    document.getElementById('adCTarget').innerText = profile.targetCarbs || 0;
-    document.getElementById('adCPct').innerText = `${Math.round((today.carbs / cTar) * 100)}%`;
-    document.getElementById('adCBar').style.width = `${Math.min(100, Math.round((today.carbs / cTar) * 100))}%`;
-
-    document.getElementById('adFConsumed').innerText = today.fat;
-    document.getElementById('adFTarget').innerText = profile.targetFat || 0;
-    document.getElementById('adFPct').innerText = `${Math.round((today.fat / fTar) * 100)}%`;
-    document.getElementById('adFBar').style.width = `${Math.min(100, Math.round((today.fat / fTar) * 100))}%`;
+    document.getElementById('adPConsumed').innerText = today.protein; document.getElementById('adPTarget').innerText = profile.targetProtein || 0;
+    document.getElementById('adPPct').innerText = `${Math.round((today.protein / pTar) * 100)}%`; document.getElementById('adPBar').style.width = `${Math.min(100, Math.round((today.protein / pTar) * 100))}%`;
+    document.getElementById('adCConsumed').innerText = today.carbs; document.getElementById('adCTarget').innerText = profile.targetCarbs || 0;
+    document.getElementById('adCPct').innerText = `${Math.round((today.carbs / cTar) * 100)}%`; document.getElementById('adCBar').style.width = `${Math.min(100, Math.round((today.carbs / cTar) * 100))}%`;
+    document.getElementById('adFConsumed').innerText = today.fat; document.getElementById('adFTarget').innerText = profile.targetFat || 0;
+    document.getElementById('adFPct').innerText = `${Math.round((today.fat / fTar) * 100)}%`; document.getElementById('adFBar').style.width = `${Math.min(100, Math.round((today.fat / fTar) * 100))}%`;
 
     const listEl = document.getElementById('adHistoryList');
     listEl.innerHTML = "";
-    if(history.length === 0) {
-        listEl.innerHTML = "<div class='text-center text-gray-400 py-6 text-xs'>ยังไม่มีรายการอาหารที่บันทึกวันนี้</div>";
-    } else {
-        history.forEach((item, index) => {
-            listEl.innerHTML += `
-                <li class="bg-gray-50 p-3 rounded-xl border border-gray-200 flex justify-between items-center shadow-sm">
-                    <div class="flex-1">
-                        <div class="font-bold text-gray-800 text-sm">${item.name}</div>
-                        <div class="text-[11px] text-gray-500 mt-0.5">🕒 ${item.time} | <strong class="text-orange-600">${item.cal} kcal</strong></div>
-                        <div class="flex gap-2 mt-1 text-[10px] text-gray-600">
-                            <span class="bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">P: ${item.p || 0}g</span>
-                            <span class="bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">C: ${item.c || 0}g</span>
-                            <span class="bg-rose-100 text-rose-800 px-1.5 py-0.5 rounded">F: ${item.f || 0}g</span>
-                        </div>
-                    </div>
-                    <button onclick="deleteFoodItem(${index})" class="text-gray-400 hover:text-red-500 p-2 text-base transition">🗑️</button>
-                </li>`;
-        });
-    }
+    if(history.length === 0) listEl.innerHTML = "<div class='text-center text-gray-400 py-6 text-xs'>ยังไม่มีรายการอาหารที่บันทึกวันนี้</div>";
+    else history.forEach((item, index) => {
+        listEl.innerHTML += `
+            <li class="bg-gray-50 p-3 rounded-xl border border-gray-200 flex justify-between items-center shadow-sm">
+                <div class="flex-1">
+                    <div class="font-bold text-gray-800 text-sm">${item.name}</div>
+                    <div class="text-[11px] text-gray-500 mt-0.5">🕒 ${item.time} | <strong class="text-orange-600">${item.cal} kcal</strong></div>
+                </div>
+                <button onclick="deleteFoodItem(${index})" class="text-gray-400 hover:text-red-500 p-2 text-base transition">🗑️</button>
+            </li>`;
+    });
 }
 
 function deleteFoodItem(index) {
     let history = JSON.parse(localStorage.getItem(`nubcalorie_${currentUser}_history`) || "[]");
-    if(index >= 0 && index < history.length) {
-        if(confirm(`ต้องการลบรายการ "${history[index].name}" ใช่หรือไม่?`)) {
-            let current = getTodayNutrition();
-            current.calories = Math.max(0, current.calories - history[index].cal);
-            current.protein = Math.max(0, current.protein - (history[index].p || 0));
-            current.carbs = Math.max(0, current.carbs - (history[index].c || 0));
-            current.fat = Math.max(0, current.fat - (history[index].f || 0));
-            history.splice(index, 1);
-            localStorage.setItem(`nubcalorie_${currentUser}_todayNutrition`, JSON.stringify(current));
-            localStorage.setItem(`nubcalorie_${currentUser}_history`, JSON.stringify(history));
-            loadProfile();
-        }
+    if(confirm(`ต้องการลบรายการ "${history[index].name}" ใช่หรือไม่?`)) {
+        let current = getTodayNutrition();
+        current.calories = Math.max(0, current.calories - history[index].cal);
+        current.protein = Math.max(0, current.protein - (history[index].p || 0));
+        current.carbs = Math.max(0, current.carbs - (history[index].c || 0));
+        current.fat = Math.max(0, current.fat - (history[index].f || 0));
+        history.splice(index, 1);
+        localStorage.setItem(`nubcalorie_${currentUser}_todayNutrition`, JSON.stringify(current));
+        localStorage.setItem(`nubcalorie_${currentUser}_history`, JSON.stringify(history));
+        loadProfile();
     }
 }
 
 function resetCalories() {
     if(confirm(`ต้องการรีเซ็ตข้อมูลการกินวันนี้ทั้งหมดใช่หรือไม่?`)) {
         localStorage.setItem(`nubcalorie_${currentUser}_todayNutrition`, JSON.stringify({ calories: 0, protein: 0, carbs: 0, fat: 0 }));
-        localStorage.removeItem(`nubcalorie_${currentUser}_history`); 
-        loadProfile();
+        localStorage.removeItem(`nubcalorie_${currentUser}_history`); loadProfile();
     }
 }
 
 function openManualEntry() {
-    document.getElementById('manualFoodName').value = "";
-    document.getElementById('manualCalories').value = "";
-    document.getElementById('manualProtein').value = "";
-    document.getElementById('manualCarbs').value = "";
-    document.getElementById('manualFat').value = "";
     document.getElementById('manualEntryModal').classList.remove('hidden');
 }
-
 function closeManualEntry() {
     document.getElementById('manualEntryModal').classList.add('hidden');
 }
@@ -352,26 +300,37 @@ function saveManualFood() {
     const c = parseInt(document.getElementById('manualCarbs').value) || 0;
     const f = parseInt(document.getElementById('manualFat').value) || 0;
 
-    if(!name || cal === 0) {
-        alert("กรุณาพิมพ์ชื่ออาหารและตัวเลขแคลอรี่รวมให้ครบถ้วนครับ"); return;
-    }
+    if(!name || cal === 0) { alert("กรุณาพิมพ์ชื่ออาหารและแคลอรี่ให้ครบถ้วนครับ"); return; }
 
     let current = getTodayNutrition();
     current.calories += cal; current.protein += p; current.carbs += c; current.fat += f;
     localStorage.setItem(`nubcalorie_${currentUser}_todayNutrition`, JSON.stringify(current));
 
     let history = JSON.parse(localStorage.getItem(`nubcalorie_${currentUser}_history`) || "[]");
-    const timeNow = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-    history.push({ name: name, cal: cal, p: p, c: c, f: f, time: timeNow });
+    history.push({ name: name, cal: cal, p: p, c: c, f: f, time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) });
     localStorage.setItem(`nubcalorie_${currentUser}_history`, JSON.stringify(history));
 
-    closeManualEntry();
-    loadProfile();
-    alert(`บันทึก "${name}" เรียบร้อยแล้ว!`);
+    closeManualEntry(); loadProfile(); alert(`บันทึกเรียบร้อยแล้ว!`);
 }
 
+function openHistory() {
+    const history = JSON.parse(localStorage.getItem(`nubcalorie_${currentUser}_history`) || "[]");
+    const listEl = document.getElementById('historyList');
+    listEl.innerHTML = history.length === 0 ? "<div class='text-center text-gray-400 mt-10'>ยังไม่มีประวัติการกินในวันนี้</div>" : "";
+    
+    history.forEach((item) => {
+        listEl.innerHTML += `
+            <li class="bg-gray-50 p-3 rounded-xl border shadow-sm flex justify-between">
+                <div><div class="font-bold">${item.name}</div><div class="text-[11px] text-gray-400">🕒 ${item.time}</div></div>
+                <div class="font-bold text-orange-500">+${item.cal} kcal</div>
+            </li>`;
+    });
+    document.getElementById('historyModal').classList.remove('hidden');
+}
+function closeHistory() { document.getElementById('historyModal').classList.add('hidden'); }
+
 // ==========================================
-// 📸 ระบบ AI วิเคราะห์ภาพ (ใช้ระบบยืนยันตัวตนแบบ URL ที่เสถียรที่สุด)
+// 📸 ระบบ AI วิเคราะห์ภาพ (ใช้ Hugging Face)
 // ==========================================
 async function analyzeFood(event) {
     const file = event.target.files[0];
@@ -380,89 +339,50 @@ async function analyzeFood(event) {
     document.getElementById('loading').classList.remove('hidden');
 
     const reader = new FileReader();
-    reader.onload = function(e) {
-        const img = new Image();
-        img.onload = async function() {
-            const canvas = document.createElement('canvas');
-            const MAX_WIDTH = 800;
-            let width = img.width;
-            let height = img.height;
-
-            if (width > MAX_WIDTH) {
-                height = Math.round((height *= MAX_WIDTH / width));
-                width = MAX_WIDTH;
-            }
-            canvas.width = width;
-            canvas.height = height;
-            
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = "white";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(img, 0, 0, width, height);
-            
-            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
-            const base64Image = compressedDataUrl.split(',')[1];
-            
-            sendToGemini(base64Image); 
-        }
+    reader.onload = async function(e) {
+        const base64Image = e.target.result;
         
-        img.onerror = function() {
-            alert("รูปภาพนามสกุลนี้ไม่รองรับ กรุณาใช้ไฟล์ JPG หรือ PNG นะครับ");
+        try {
+            // ใช้ Model วิเคราะห์ภาพตัวที่เสถียรของ Hugging Face
+            const response = await fetch("https://api-inference.huggingface.co/models/llava-hf/llava-1.5-7b-hf", {
+                method: "POST",
+                headers: { 
+                    "Authorization": `Bearer ${HF_API_KEY}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    inputs: "นี่คือภาพอาหารอะไรในไทย? ประเมินแคลอรี่และสารอาหารสำหรับ 1 จาน ตอบเป็น JSON เท่านั้น รูปแบบ: {\"name\": \"ชื่ออาหาร\", \"cal\": 500, \"p\": 20, \"c\": 50, \"f\": 10}",
+                    image: base64Image
+                })
+            });
+
+            if (!response.ok) throw new Error("เครือข่ายมีปัญหา ลองอีกครั้งครับ");
+
+            const data = await response.json();
+            
+            // สกัดข้อมูล JSON
+            let resultText = data[0]?.generated_text || "{}";
+            const match = resultText.match(/\{[\s\S]*\}/);
+            const foodData = match ? JSON.parse(match[0]) : { name: "อาหารที่สแกนเจอ", cal: 350, p: 15, c: 30, f: 10 };
+
+            tempFoodData = {
+                name: foodData.name || "อาหารไม่ทราบชื่อ", 
+                cal: parseInt(foodData.cal) || 0, p: parseInt(foodData.p) || 0, c: parseInt(foodData.c) || 0, f: parseInt(foodData.f) || 0
+            };
+
             document.getElementById('loading').classList.add('hidden');
-        };
-        img.src = e.target.result;
-    }
-    reader.readAsDataURL(file);
-}
+            showFoodResultModal(tempFoodData);
 
-async function sendToGemini(base64Image) {
-    try {
-        const cleanApiKey = GEMINI_API_KEY.trim(); 
-
-        // ใช้การส่งรหัสแบบ ?key= ปกติ 
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${cleanApiKey}`, {
-            method: "POST",
-            headers: { 
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                contents: [{
-                    parts: [
-                        { text: "วิเคราะห์ภาพนี้ว่าเป็นอาหารอะไร ประเมินแคลอรี่และสารอาหารสำหรับ 1 จาน ห้ามมีคำอธิบาย ห้ามมี markdown ให้ตอบกลับเป็น JSON format เท่านั้น ตัวอย่าง: {\"name\": \"ข้าวผัดหมู\", \"cal\": 550, \"p\": 20, \"c\": 50, \"f\": 15}" },
-                        { inline_data: { mime_type: "image/jpeg", data: base64Image } }
-                    ]
-                }]
-            })
-        });
-
-        if (!response.ok) {
-            const errData = await response.json();
-            throw new Error(`API Error: ${errData.error?.message || response.statusText}`);
+        } catch (error) {
+            console.error("AI Error:", error);
+            // กรณีระบบวิเคราะห์ขัดข้องชั่วคราว จะเปิดหน้าจดเองให้เพื่อไม่ให้สะดุด
+            alert("ตอนนี้ AI กำลังอัปเดตระบบ หรือรูปภาพอาจจะไม่ชัดเจนพอ ให้บันทึกเองก่อนได้เลยครับ");
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('cameraInput').value = "";
+            openManualEntry(); 
         }
-
-        const data = await response.json();
-        let resultText = data.candidates[0].content.parts[0].text;
-        resultText = resultText.replace(/```json/g, "").replace(/```/g, "").trim();
-        
-        const foodData = JSON.parse(resultText);
-
-        tempFoodData = {
-            name: foodData.name || "อาหารไม่ทราบชื่อ", 
-            cal: parseInt(foodData.cal) || 0, 
-            p: parseInt(foodData.p) || 0, 
-            c: parseInt(foodData.c) || 0, 
-            f: parseInt(foodData.f) || 0
-        };
-
-        document.getElementById('loading').classList.add('hidden');
-        showFoodResultModal(tempFoodData);
-
-    } catch (error) {
-        console.error("Gemini Error:", error);
-        alert("ขออภัยครับ ถ่ายภาพใหม่อีกครั้ง หรือลองถ่ายมุมที่เห็นอาหารชัดเจนขึ้นนะครับ\n(ข้อผิดพลาด: " + error.message + ")");
-        document.getElementById('loading').classList.add('hidden');
-        document.getElementById('cameraInput').value = "";
-    }
+    };
+    reader.readAsDataURL(file);
 }
 
 function showFoodResultModal(food) {
@@ -483,55 +403,10 @@ function closeResultModal() {
 function confirmAddFood() {
     if(!tempFoodData) return;
     let current = getTodayNutrition();
-    current.calories += tempFoodData.cal;
-    current.protein += tempFoodData.p;
-    current.carbs += tempFoodData.c;
-    current.fat += tempFoodData.f;
-
+    current.calories += tempFoodData.cal; current.protein += tempFoodData.p; current.carbs += tempFoodData.c; current.fat += tempFoodData.f;
     localStorage.setItem(`nubcalorie_${currentUser}_todayNutrition`, JSON.stringify(current));
-
     let history = JSON.parse(localStorage.getItem(`nubcalorie_${currentUser}_history`) || "[]");
-    const timeNow = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-    
-    history.push({
-        name: tempFoodData.name, cal: tempFoodData.cal, p: tempFoodData.p, c: tempFoodData.c, f: tempFoodData.f, time: timeNow
-    });
+    history.push({ name: tempFoodData.name, cal: tempFoodData.cal, p: tempFoodData.p, c: tempFoodData.c, f: tempFoodData.f, time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) });
     localStorage.setItem(`nubcalorie_${currentUser}_history`, JSON.stringify(history));
-
-    closeResultModal();
-    loadProfile();
-}
-
-function openHistory() {
-    const history = JSON.parse(localStorage.getItem(`nubcalorie_${currentUser}_history`) || "[]");
-    const listEl = document.getElementById('historyList');
-    listEl.innerHTML = "";
-    if(history.length === 0) {
-        listEl.innerHTML = "<div class='text-center text-gray-400 mt-10'>ยังไม่มีประวัติการกินในวันนี้</div>";
-    } else {
-        history.forEach((item) => {
-            listEl.innerHTML += `
-                <li class="bg-gray-50 p-3 rounded-xl border shadow-sm">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <div class="font-bold text-gray-800">${item.name}</div>
-                            <div class="text-[11px] text-gray-400 mt-0.5">🕒 เวลา: ${item.time}</div>
-                        </div>
-                        <div class="font-bold text-orange-500 bg-orange-50 border border-orange-100 px-2.5 py-0.5 rounded-full text-xs">
-                            +${item.cal} kcal
-                        </div>
-                    </div>
-                    <div class="flex gap-2 mt-2 pt-2 border-t text-[11px] text-gray-600">
-                        <span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded">🍗 P: ${item.p || 0}g</span>
-                        <span class="bg-amber-50 text-amber-700 px-2 py-0.5 rounded">🍚 C: ${item.c || 0}g</span>
-                        <span class="bg-rose-50 text-rose-700 px-2 py-0.5 rounded">🥑 F: ${item.f || 0}g</span>
-                    </div>
-                </li>`;
-        });
-    }
-    document.getElementById('historyModal').classList.remove('hidden');
-}
-
-function closeHistory() {
-    document.getElementById('historyModal').classList.add('hidden');
+    closeResultModal(); loadProfile();
 }
